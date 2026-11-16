@@ -1,0 +1,13 @@
+.dart_tool/
+.packages
+build/
+coverage/
+.flutter-plugins
+.flutter-plugins-dependencies
+.idea/
+*.iml
+.DS_Store
+
+# Firebase admin key used only by tools/seed.js
+tools/serviceAccountKey.json
+tools/node_modules/
