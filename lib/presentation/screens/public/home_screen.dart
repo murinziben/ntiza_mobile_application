@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../../core/theme/app_theme.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../domain/entities/entities.dart';
 import '../../providers/providers.dart';
 import '../../widgets/ui.dart';
+import 'featured_slider.dart';
 import 'widgets.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -34,30 +38,22 @@ class HomeScreen extends ConsumerWidget {
                     () => context.go('/experts')),
                 _Quick('Training', Icons.menu_book_outlined, AppColors.amberBg, AppColors.amber,
                     () => context.go('/training')),
-                _Quick('Agents', Icons.smartphone_outlined, AppColors.purpleBg,
-                    AppColors.purple, () => context.push('/login')),
+                _Quick('Agents', Icons.smartphone_outlined, AppColors.purpleBg, AppColors.purple,
+                    () => context.push('/login')),
               ],
             ),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 26, 16, 14),
-            child: SectionHeader('Equipment Marketplace',
+            child: SectionHeader('Featured Equipment',
                 action: 'See all', onAction: () => context.go('/equipment')),
           ),
-          SizedBox(
-            height: 300,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: equipment.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 14),
-              itemBuilder: (_, i) => SizedBox(
-                width: 276,
-                child: EquipmentTile(item: equipment[i], compact: true),
-              ),
-            ),
-          ),
-          if (equipment.isEmpty) const EmptyNote('No equipment listed yet.'),
+          if (equipment.isNotEmpty) FeaturedSlider(items: featuredEquipment(equipment)),
+          if (equipment.isEmpty)
+            const EmptyState('No equipment listed yet',
+                message: 'New machines will appear here.',
+                icon: Icons.agriculture_outlined,
+                padding: 16),
           const Padding(
             padding: EdgeInsets.fromLTRB(16, 28, 16, 14),
             child: Text('How NTIZA Works',
@@ -105,29 +101,29 @@ class HomeScreen extends ConsumerWidget {
             ),
           if (!signedIn)
             Padding(
-            padding: const EdgeInsets.fromLTRB(16, 22, 16, 28),
-            child: Container(
-              padding: const EdgeInsets.all(22),
-              decoration: BoxDecoration(
-                color: AppColors.primaryDark,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Ready to grow with NTIZA?',
-                      style: TextStyle(
-                          color: Colors.white, fontSize: 21, fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 10),
-                  const Text('Join thousands of farmers, owners and experts across Rwanda.',
-                      style: TextStyle(color: Colors.white, fontSize: 16, height: 1.45)),
-                  const SizedBox(height: 18),
-                  OutlineButtonX('Create Free Account',
-                      expand: false, onPressed: () => context.push('/register')),
-                ],
+              padding: const EdgeInsets.fromLTRB(16, 22, 16, 28),
+              child: Container(
+                padding: const EdgeInsets.all(22),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryDark,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Ready to grow with NTIZA?',
+                        style: TextStyle(
+                            color: Colors.white, fontSize: 21, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 10),
+                    const Text('Join thousands of farmers, owners and experts across Rwanda.',
+                        style: TextStyle(color: Colors.white, fontSize: 16, height: 1.45)),
+                    const SizedBox(height: 18),
+                    OutlineButtonX('Create Free Account',
+                        expand: false, onPressed: () => context.push('/register')),
+                  ],
+                ),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -140,10 +136,12 @@ class _Hero extends StatelessWidget {
   final bool signedIn;
 
   @override
-  Widget build(BuildContext context) => Column(
+  Widget build(BuildContext context) => AnnotatedRegion<SystemUiOverlayStyle>(
+      value: lightStatusBarStyle,
+      child: Column(
         children: [
           SizedBox(
-            height: 470,
+            height: 430,
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -182,8 +180,7 @@ class _Hero extends StatelessWidget {
                                     child: signedIn
                                         ? const BellIcon(light: true)
                                         : const Icon(Icons.settings_outlined,
-                                            color: Colors.white,
-                                            semanticLabel: 'Settings'),
+                                            color: Colors.white, semanticLabel: 'Settings'),
                                   ),
                                 ),
                               ),
@@ -191,8 +188,7 @@ class _Hero extends StatelessWidget {
                           ],
                         ),
                         const Spacer(),
-                        const Text(
-                            'Connecting Farmers to Agricultural Equipment and Experts',
+                        const Text('Connecting Farmers to Agricultural Equipment and Experts',
                             style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 27,
@@ -210,10 +206,9 @@ class _Hero extends StatelessWidget {
                           const SizedBox(width: 12),
                           Expanded(
                               child: OutlineButtonX('Book Services',
-                                  onPressed: () =>
-                                      context.push(signedIn ? '/experts' : '/login'))),
+                                  onPressed: () => context.push(signedIn ? '/experts' : '/login'))),
                         ]),
-                        const SizedBox(height: 56),
+                        const SizedBox(height: 50),
                       ],
                     ),
                   ),
@@ -232,12 +227,16 @@ class _Hero extends StatelessWidget {
                     BoxShadow(color: Color(0x1A000000), blurRadius: 14, offset: Offset(0, 4))
                   ],
                 ),
-                child: const SearchField(hint: 'Search tractors, experts, courses…'),
+                child: Builder(
+                  builder: (context) => SearchField(
+                      hint: 'Search tractors, experts, courses…',
+                      onTap: () => context.go('/equipment')),
+                ),
               ),
             ),
           ),
         ],
-      );
+      ));
 }
 
 /// Round shortcut button on the home screen.
@@ -290,8 +289,7 @@ class _Step extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w600)),
+                  Text(title, style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 2),
                   Text(sub, style: const TextStyle(fontSize: 13.5, color: AppColors.muted)),
                 ],

@@ -84,7 +84,10 @@ class OwnerDashboard extends ConsumerWidget {
             sectionTitle('Pending Requests',
                 action: 'View all', onAction: () => context.go('/owner/bookings')),
             const SizedBox(height: 12),
-            if (requests.isEmpty) const EmptyNote('No pending requests.', padding: 24),
+            if (requests.isEmpty) const EmptyState('No pending requests',
+                message: 'New booking requests appear here.',
+                icon: Icons.inbox_outlined,
+                padding: 16),
             for (final r in requests.take(2)) ...[
               _RequestTile(booking: r),
               const SizedBox(height: 12),
@@ -202,9 +205,11 @@ class OwnerEquipmentScreen extends ConsumerWidget {
             child: Column(
               children: [
                 if (items.isEmpty)
-                  const EmptyNote('No equipment here yet — add your first machine.'),
-                for (final e in items) ...[
-                  _EquipmentRow(equipment: e),
+                  const EmptyState('No equipment here yet',
+                      message: 'Add a machine, or change the filter above.',
+                      icon: Icons.agriculture_outlined),
+                for (var i = 0; i < items.length; i++) ...[
+                  FadeSlideIn(index: i, child: _EquipmentRow(equipment: items[i])),
                   const SizedBox(height: 12),
                 ],
                 const SizedBox(height: 4),
@@ -663,7 +668,9 @@ class OwnerBookingsScreen extends ConsumerWidget {
             child: Column(
               children: [
                 if (shown.isEmpty)
-                  EmptyNote(filter == 'Requests' ? 'No pending requests.' : 'Nothing here yet.',
+                  EmptyState(filter == 'Requests' ? 'No pending requests' : 'Nothing here yet',
+                      message: 'Bookings will show up here as they come in.',
+                      icon: Icons.event_note_outlined,
                       padding: 50),
                 for (final b in shown) ...[
                   if (filter == 'Requests')
@@ -751,7 +758,10 @@ class OwnerEarningsScreen extends ConsumerWidget {
           sectionTitle('Transactions'),
           const SizedBox(height: 12),
           if (rows.isEmpty)
-            const EmptyNote('Completed jobs will appear here.', padding: 24)
+            const EmptyState('No completed jobs yet',
+                message: 'Completed jobs and payouts will appear here.',
+                icon: Icons.payments_outlined,
+                padding: 24)
           else
             RowsCard(rows),
         ],

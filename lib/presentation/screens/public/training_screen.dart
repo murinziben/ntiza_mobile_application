@@ -34,9 +34,11 @@ class TrainingScreen extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 children: [
-                  if (items.isEmpty) const EmptyNote('No courses in this topic yet.'),
-                  for (final c in items) ...[
-                    CourseCard(course: c),
+                  if (items.isEmpty)
+                    const EmptyState('No courses here yet',
+                        message: 'Try another topic.', icon: Icons.menu_book_outlined),
+                  for (var i = 0; i < items.length; i++) ...[
+                    FadeSlideIn(index: i, child: CourseCard(course: items[i])),
                     const SizedBox(height: 16),
                   ],
                 ],

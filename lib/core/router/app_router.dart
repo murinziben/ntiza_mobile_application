@@ -32,6 +32,7 @@ import '../../presentation/screens/public/experts_screen.dart';
 import '../../presentation/screens/public/home_screen.dart';
 import '../../presentation/screens/public/marketplace_screen.dart';
 import '../../presentation/screens/public/public_shell.dart';
+import '../../presentation/screens/public/splash_screen.dart';
 import '../../presentation/screens/public/training_screen.dart';
 import '../../presentation/screens/public/welcome_screen.dart';
 
@@ -68,6 +69,8 @@ String? decideRedirect({
   required AsyncValue<AuthSession?> session,
   required AsyncValue<AppUser?> profile,
 }) {
+  // The splash screen decides for itself when to leave.
+  if (loc == '/splash') return null;
   if (session.isLoading) return null;
   final identity = session.valueOrNull;
   final inRoleArea = _roleAreas.any((a) => _within(loc, a));
@@ -91,19 +94,20 @@ String? decideRedirect({
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = _RouterRefresh(ref);
   ref.onDispose(refresh.dispose);
-  final seen = ref.read(settingsControllerProvider).onboardingSeen;
 
   return GoRouter(
-    initialLocation: seen ? '/home' : '/welcome',
+    initialLocation: '/splash',
     refreshListenable: refresh,
     redirect: (context, state) {
       final session = ref.read(sessionProvider);
       final profile = ref.read(profileProvider);
       final to = decideRedirect(loc: state.matchedLocation, session: session, profile: profile);
-      debugPrint('REDIRECT[DEBUG] loc=${state.matchedLocation} session=$session profile=$profile -> $to');
+      debugPrint(
+          'REDIRECT[DEBUG] loc=${state.matchedLocation} session=$session profile=$profile -> $to');
       return to;
     },
     routes: [
+      GoRoute(path: '/splash', builder: (_, __) => const SplashScreen()),
       GoRoute(path: '/welcome', builder: (_, __) => const WelcomeScreen()),
       GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
       GoRoute(path: '/register', builder: (_, __) => const RegisterScreen()),

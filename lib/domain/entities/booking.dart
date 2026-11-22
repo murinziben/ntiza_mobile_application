@@ -81,6 +81,12 @@ class Booking {
 
   bool get expert => kind == BookingKind.consult;
   bool get isPaid => paidVia != null && paidVia!.isNotEmpty;
+
+  /// Money the provider has earned: the farmer paid (or the job is done) and
+  /// the booking was not cancelled.
+  bool get isEarned =>
+      status != BookingStatus.cancelled && (isPaid || status == BookingStatus.completed);
+
   bool get earlier => status == BookingStatus.completed || status == BookingStatus.cancelled;
 
   /// The name shown to the provider: the farmer, or the agent's client.

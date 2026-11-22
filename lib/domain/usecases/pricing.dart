@@ -67,8 +67,16 @@ class BookingStats {
       list.where((b) => b.status == status).length;
 
   /// Sum of [value] over completed bookings.
-  static int completedTotal(Iterable<Booking> list, int Function(Booking) value) =>
-      list.where((b) => b.status == BookingStatus.completed).fold(0, (s, b) => s + value(b));
+  ///
+  /// [counts] picks which bookings are included; it defaults to completed ones.
+  static int completedTotal(
+    Iterable<Booking> list,
+    int Function(Booking) value, {
+    bool Function(Booking)? counts,
+  }) =>
+      list.where(counts ?? _isCompleted).fold(0, (s, b) => s + value(b));
+
+  static bool _isCompleted(Booking b) => b.status == BookingStatus.completed;
 
   /// Totals for the last [months] months (oldest first) ending at [now].
   static List<MonthTotal> monthly(
@@ -76,7 +84,9 @@ class BookingStats {
     int Function(Booking) value, {
     required DateTime now,
     int months = 6,
+    bool Function(Booking)? counts,
   }) {
+    final include = counts ?? _isCompleted;
     const names = [
       'Jan',
       'Feb',
@@ -96,7 +106,7 @@ class BookingStats {
       final m = DateTime(now.year, now.month - i, 1);
       final sum = list
           .where((b) =>
-              b.status == BookingStatus.completed &&
+              include(b) &&
               b.createdAt != null &&
               b.createdAt!.year == m.year &&
               b.createdAt!.month == m.month)

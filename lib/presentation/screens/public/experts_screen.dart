@@ -46,8 +46,7 @@ class ExpertsScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Pill('Pay per session',
-                            bg: AppColors.green100, fg: AppColors.primaryDark),
+                        Pill('Pay per session', bg: AppColors.green100, fg: AppColors.primaryDark),
                         SizedBox(height: 10),
                         Text('Not sure which expert you need?',
                             style: TextStyle(
@@ -66,8 +65,7 @@ class ExpertsScreen extends ConsumerWidget {
                     width: 64,
                     height: 64,
                     decoration: BoxDecoration(
-                        color: const Color(0x33FFFFFF),
-                        borderRadius: BorderRadius.circular(18)),
+                        color: const Color(0x33FFFFFF), borderRadius: BorderRadius.circular(18)),
                     child: const Icon(Icons.chat_bubble_outline, color: Colors.white, size: 30),
                   ),
                 ],
@@ -80,9 +78,15 @@ class ExpertsScreen extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 children: [
-                  if (items.isEmpty) const EmptyNote('No experts in this category yet.'),
-                  for (final e in items) ...[
-                    ExpertCard(expert: e, onBook: () => goBookExpert(context, ref, e.id)),
+                  if (items.isEmpty)
+                    const EmptyState('No experts here yet',
+                        message: 'Try another category.', icon: Icons.groups_2_outlined),
+                  for (var i = 0; i < items.length; i++) ...[
+                    FadeSlideIn(
+                        index: i,
+                        child: ExpertCard(
+                            expert: items[i],
+                            onBook: () => goBookExpert(context, ref, items[i].id))),
                     const SizedBox(height: 12),
                   ],
                 ],

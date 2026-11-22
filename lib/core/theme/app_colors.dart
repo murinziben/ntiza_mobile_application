@@ -11,7 +11,8 @@ class AppColors {
   static const green100 = Color(0xFFDCFCE7);
   static const green50 = Color(0xFFF0FDF4);
 
-  static const page = Color(0xFFF9FAFB);
+  /// Faint green tint behind white cards.
+  static const page = Color(0xFFF3F8F4);
   static const white = Color(0xFFFFFFFF);
   static const border = Color(0xFFE5E7EB);
   static const ink = Color(0xFF111827);
@@ -33,8 +34,22 @@ class AppColors {
 
 class AppRadius {
   AppRadius._();
-  static const card = 18.0;
+  static const card = 20.0;
   static const input = 14.0;
   static const button = 14.0;
   static const pill = 999.0;
+}
+
+class AppShadow {
+  AppShadow._();
+
+  /// Soft green-tinted shadow that replaces card outlines.
+  static const card = [
+    BoxShadow(color: Color(0x140B3D1F), blurRadius: 18, offset: Offset(0, 6)),
+    BoxShadow(color: Color(0x0A0B3D1F), blurRadius: 3, offset: Offset(0, 1)),
+  ];
+
+  static const floating = [
+    BoxShadow(color: Color(0x1F0B3D1F), blurRadius: 24, offset: Offset(0, 8)),
+  ];
 }

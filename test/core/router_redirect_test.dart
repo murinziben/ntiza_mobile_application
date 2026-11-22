@@ -22,6 +22,13 @@ String? _go(String loc,
     );
 
 void main() {
+  test('the splash screen is never redirected away from', () {
+    expect(_go('/splash', sessionLoading: true), isNull);
+    expect(_go('/splash', session: _verified, me: _user(Role.farmer)), isNull);
+    expect(_go('/splash', session: _unverified), isNull);
+    expect(_go('/splash'), isNull);
+  });
+
   group('signed out', () {
     test('may browse public screens', () {
       for (final loc in [

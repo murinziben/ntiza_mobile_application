@@ -60,21 +60,6 @@ Widget _miniAction(String label, IconData icon, VoidCallback? onTap,
     );
 
 /// Centered grey message for empty lists.
-class _Empty extends StatelessWidget {
-  const _Empty(this.text, {this.padding = 50});
-  final String text;
-  final double padding;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: EdgeInsets.symmetric(vertical: padding),
-        child: Center(
-          child: Text(text,
-              textAlign: TextAlign.center, style: const TextStyle(color: AppColors.muted)),
-        ),
-      );
-}
-
 // ---- overview ------------------------------------------------------------------
 
 /// Platform summary: users, applications, bookings, disputes and revenue.
@@ -126,7 +111,8 @@ class AdminOverview extends ConsumerWidget {
             sectionTitle('Pending Applications',
                 action: 'Review', onAction: () => context.go('/admin/applications')),
             const SizedBox(height: 12),
-            if (pendingApps.isEmpty) const _Empty('No pending applications.', padding: 16),
+            if (pendingApps.isEmpty) const EmptyState('No pending applications',
+                icon: Icons.how_to_reg_outlined, padding: 16),
             for (final a in pendingApps.take(2)) ...[
               PersonCard(
                 initials: initialsOf(a.name),
@@ -141,7 +127,8 @@ class AdminOverview extends ConsumerWidget {
             const SizedBox(height: 12),
             sectionTitle('Recent Bookings'),
             const SizedBox(height: 12),
-            if (bookings.isEmpty) const _Empty('No bookings yet.', padding: 16),
+            if (bookings.isEmpty) const EmptyState('No bookings yet',
+                icon: Icons.event_note_outlined, padding: 16),
             for (final b in bookings.take(3)) ...[
               _BookingTile(booking: b),
               const SizedBox(height: 12),
@@ -238,7 +225,10 @@ class AdminApplicationsScreen extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
             child: Column(
               children: [
-                if (list.isEmpty) const _Empty('Nothing here.', padding: 60),
+                if (list.isEmpty) const EmptyState('Nothing here',
+                    message: 'There is nothing in this list right now.',
+                    icon: Icons.inbox_outlined,
+                    padding: 60),
                 for (final a in list) ...[
                   AppCard(
                     padding: const EdgeInsets.all(14),
@@ -378,7 +368,9 @@ class AdminUsersScreen extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
             child: Column(
               children: [
-                if (items.isEmpty) const _Empty('No users found.'),
+                if (items.isEmpty) const EmptyState('No users found',
+                    message: 'Try a different search or filter.',
+                    icon: Icons.person_search_outlined),
                 for (final u in items) ...[
                   // Admins (including yourself) cannot be managed from here.
                   PersonCard(
@@ -466,7 +458,10 @@ class AdminDisputesScreen extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
             child: Column(
               children: [
-                if (list.isEmpty) const _Empty('Nothing here.', padding: 60),
+                if (list.isEmpty) const EmptyState('Nothing here',
+                    message: 'There is nothing in this list right now.',
+                    icon: Icons.inbox_outlined,
+                    padding: 60),
                 for (final d in list) ...[
                   AppCard(
                     padding: const EdgeInsets.all(14),

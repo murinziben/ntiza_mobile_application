@@ -12,32 +12,12 @@ import '../../widgets/ui.dart';
 Widget asyncSection<T>(AsyncValue<T> value, Widget Function(T data) data) => value.when(
       data: data,
       loading: () => const Padding(
-        padding: EdgeInsets.symmetric(vertical: 48),
-        child: Center(child: CircularProgressIndicator()),
+        padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+        child: SkeletonList(),
       ),
-      error: (_, __) => const Padding(
-        padding: EdgeInsets.symmetric(vertical: 48, horizontal: 24),
-        child: Center(
-          child: Text('Could not load data. Check your connection and try again.',
-              textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted)),
-        ),
-      ),
+      error: (_, __) => const EmptyState('Could not load data',
+          message: 'Check your connection and try again.', icon: Icons.wifi_off_rounded),
     );
-
-/// Centered grey message for empty lists.
-class EmptyNote extends StatelessWidget {
-  const EmptyNote(this.text, {super.key});
-  final String text;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 16),
-        child: Center(
-          child: Text(text,
-              textAlign: TextAlign.center, style: const TextStyle(color: AppColors.muted)),
-        ),
-      );
-}
 
 /// Opens the expert booking flow, or the login screen for guests.
 void goBookExpert(BuildContext context, WidgetRef ref, String expertId) {
@@ -57,26 +37,22 @@ class EquipmentTile extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            AssetPhoto(item.image, height: compact ? 118 : 160),
+            Stack(
+              children: [
+                AssetPhoto(item.image, height: compact ? 118 : 168),
+                Positioned(left: 12, top: 12, child: StatusChip(item.availabilityLabel)),
+              ],
+            ),
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(item.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                fontSize: 17.5, fontWeight: FontWeight.w700)),
-                      ),
-                      const SizedBox(width: 8),
-                      StatusChip(item.availabilityLabel),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
+                  Text(item.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 6),
                   Row(children: [
                     const Icon(Icons.location_on_outlined, size: 17, color: AppColors.muted),
                     const SizedBox(width: 4),
@@ -159,9 +135,7 @@ class ExpertCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(expert.field,
                       style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primaryDark)),
+                          fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.primaryDark)),
                   const SizedBox(height: 3),
                   RatingLine(expert.rating, '${expert.years} years experience'),
                   const SizedBox(height: 3),

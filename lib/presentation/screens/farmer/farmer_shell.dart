@@ -16,12 +16,5 @@ class FarmerShell extends StatelessWidget {
   final StatefulNavigationShell shell;
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        body: shell,
-        bottomNavigationBar: NtizaBottomNav(
-          items: farmerNav,
-          index: shell.currentIndex,
-          onTap: (i) => shell.goBranch(i, initialLocation: i == shell.currentIndex),
-        ),
-      );
+  Widget build(BuildContext context) => NavShell(shell: shell, items: farmerNav);
 }

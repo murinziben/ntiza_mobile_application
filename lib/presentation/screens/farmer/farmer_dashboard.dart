@@ -7,7 +7,6 @@ import '../../../domain/entities/entities.dart';
 import '../../../domain/usecases/pricing.dart';
 import '../../providers/providers.dart';
 import '../../widgets/ui.dart';
-import '../public/widgets.dart';
 import 'booking_row.dart';
 
 /// Farmer home: greeting, live booking statistics and shortcuts.
@@ -50,24 +49,7 @@ class FarmerDashboard extends ConsumerWidget {
                     ],
                   ),
                 ),
-                Semantics(
-                  button: true,
-                  label: 'Notifications',
-                  child: InkWell(
-                    customBorder: const CircleBorder(),
-                    onTap: () => context.push('/notifications'),
-                    child: Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: const Center(child: BellIcon()),
-                    ),
-                  ),
-                ),
+                const BellButton(),
               ],
             ),
             const SizedBox(height: 16),
@@ -145,7 +127,10 @@ class FarmerDashboard extends ConsumerWidget {
             SectionHeader('Recent Bookings',
                 action: 'View all', onAction: () => context.go('/farmer/bookings')),
             const SizedBox(height: 12),
-            if (bookings.isEmpty) const EmptyNote('No bookings yet — book your first machine.'),
+            if (bookings.isEmpty) const EmptyState('No bookings yet',
+                  message: 'Book your first machine to get started.',
+                  icon: Icons.calendar_month_outlined,
+                  padding: 16),
             for (final b in bookings.take(3)) ...[
               BookingRow(
                   booking: b,

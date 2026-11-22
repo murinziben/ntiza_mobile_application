@@ -152,13 +152,10 @@ class AgentDashboard extends ConsumerWidget {
                 action: 'Commission', onAction: () => context.go('/agent/commission')),
             const SizedBox(height: 12),
             if (bookings.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 24),
-                child: Center(
-                  child: Text('No bookings yet — book a machine for one of your farmers.',
-                      textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted)),
-                ),
-              ),
+              const EmptyState('No bookings yet',
+                  message: 'Book a machine for one of your farmers.',
+                  icon: Icons.event_note_outlined,
+                  padding: 16),
             for (final b in bookings.take(3)) ...[
               _BookingTile(booking: b),
               const SizedBox(height: 12),
@@ -254,21 +251,15 @@ class AgentFarmersScreen extends ConsumerWidget {
         children: [
           SearchField(
               hint: 'Search by name or phone',
-              filter: false,
               onChanged: (v) => ref.read(_clientQueryProvider.notifier).state = v),
           const SizedBox(height: 16),
           if (items.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 40),
-              child: Center(
-                child: Text(
-                    clients.isEmpty
-                        ? 'No farmers yet — register your first one below.'
-                        : 'No farmers match your search.',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: AppColors.muted)),
-              ),
-            ),
+            EmptyState(
+                clients.isEmpty ? 'No farmers yet' : 'No farmers found',
+                message: clients.isEmpty
+                    ? 'Register your first farmer below.'
+                    : 'Try a different name or phone number.',
+                icon: Icons.groups_2_outlined),
           for (final c in items) ...[
             _clientCard(context, ref, c, bookings),
             const SizedBox(height: 12),
@@ -637,10 +628,8 @@ class _AgentNewBookingScreenState extends ConsumerState<AgentNewBookingScreen> {
             const Text('2. Machine', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700)),
             const SizedBox(height: 10),
             if (available.isEmpty)
-              const AppCard(
-                child: Text('No machines are available right now.',
-                    style: TextStyle(color: AppColors.muted)),
-              )
+              const EmptyState('No machines available',
+                  message: 'Check back later.', icon: Icons.agriculture_outlined, padding: 16)
             else
               DropdownButtonFormField<String>(
                 key: ValueKey('eq-${eq?.id}'),

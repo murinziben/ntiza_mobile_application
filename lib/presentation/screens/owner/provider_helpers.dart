@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/theme/app_colors.dart';
 import '../../../domain/entities/entities.dart';
 import '../../../domain/usecases/pricing.dart';
 import '../../providers/providers.dart';
@@ -32,8 +31,9 @@ class EarningsView {
   factory EarningsView.from(List<Booking> bookings, {DateTime? now}) {
     int net(Booking b) => BookingPricing.providerNet(b.total);
     return EarningsView(
-      net: BookingStats.completedTotal(bookings, net),
-      series: BookingStats.monthly(bookings, net, now: now ?? DateTime.now()),
+      net: BookingStats.completedTotal(bookings, net, counts: (b) => b.isEarned),
+      series: BookingStats.monthly(bookings, net,
+          now: now ?? DateTime.now(), counts: (b) => b.isEarned),
     );
   }
 
@@ -47,7 +47,7 @@ class EarningsView {
 
 /// Transaction rows (newest first) for completed bookings.
 List<RowSpec> payoutRows(List<Booking> bookings, IconData icon, {int limit = 10}) => [
-      for (final b in bookings.where((b) => b.status == BookingStatus.completed).take(limit))
+      for (final b in bookings.where((b) => b.isEarned).take(limit))
         RowSpec(
           icon,
           b.customerName.isEmpty ? b.title : '${b.title} · ${b.customerName}',
@@ -55,19 +55,3 @@ List<RowSpec> payoutRows(List<Booking> bookings, IconData icon, {int limit = 10}
           '+${rwf(BookingPricing.providerNet(b.total))}',
         ),
     ];
-
-/// Centered grey message for empty lists.
-class EmptyNote extends StatelessWidget {
-  const EmptyNote(this.text, {super.key, this.padding = 40});
-  final String text;
-  final double padding;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: EdgeInsets.symmetric(vertical: padding, horizontal: 12),
-        child: Center(
-          child: Text(text,
-              textAlign: TextAlign.center, style: const TextStyle(color: AppColors.muted)),
-        ),
-      );
-}

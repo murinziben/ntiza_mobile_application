@@ -168,7 +168,10 @@ class _RequestList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => Column(
         children: [
-          if (requests.isEmpty) const EmptyNote('No new requests.', padding: 24),
+          if (requests.isEmpty) const EmptyState('No new requests',
+              message: 'Consultation requests appear here.',
+              icon: Icons.inbox_outlined,
+              padding: 16),
           for (final r in requests) ...[
             RequestCard(
               initials: initialsOf(r.customerName),
@@ -224,7 +227,10 @@ class ExpertConsultsScreen extends ConsumerWidget {
                 ? _RequestList(requests: shown)
                 : Column(
                     children: [
-                      if (shown.isEmpty) const EmptyNote('Nothing here yet.', padding: 60),
+                      if (shown.isEmpty) const EmptyState('Nothing here yet',
+                          message: 'Consultations will show up here.',
+                          icon: Icons.event_note_outlined,
+                          padding: 60),
                       for (final c in shown) ...[
                         PersonCard(
                           initials: initialsOf(c.customerName),
@@ -298,8 +304,9 @@ class ExpertAvailabilityScreen extends ConsumerWidget {
     return Scaffold(
       appBar: const TopBar('Availability', back: false),
       body: expert == null
-          ? const EmptyNote(
-              'Your expert profile is created when an admin approves your application.',
+          ? const EmptyState('Profile not ready yet',
+              message: 'Your expert profile is created when an admin approves your application.',
+              icon: Icons.hourglass_top_rounded,
               padding: 80)
           : _AvailabilityForm(key: ValueKey(expert.id), expert: expert),
     );
@@ -501,7 +508,10 @@ class ExpertEarningsScreen extends ConsumerWidget {
           sectionTitle('Recent payouts'),
           const SizedBox(height: 12),
           if (rows.isEmpty)
-            const EmptyNote('Completed consultations will appear here.', padding: 24)
+            const EmptyState('No completed consultations yet',
+                message: 'Completed consultations and payouts appear here.',
+                icon: Icons.payments_outlined,
+                padding: 24)
           else
             RowsCard(rows),
         ],
