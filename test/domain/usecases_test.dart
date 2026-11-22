@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ntiza/core/errors/app_exception.dart';
+import 'package:ntiza/core/utils/formatters.dart';
 import 'package:ntiza/domain/entities/entities.dart';
 import 'package:ntiza/domain/usecases/agent_usecases.dart';
 import 'package:ntiza/domain/usecases/auth_usecases.dart';
@@ -160,7 +161,7 @@ void main() {
     });
 
     test('bookEquipment rejects machines under maintenance and blank locations', () {
-      final broken = sampleTractor.copyWith(status: EquipmentStatus.maintenance);
+      final broken = sampleTractor.copyWith(inMaintenance: true);
       expect(
         () => useCases.bookEquipment(
             equipment: broken,
@@ -191,6 +192,61 @@ void main() {
         throwsA(isA<AppException>()),
       );
       expect(bookings.created, isEmpty);
+    });
+
+    test('bookEquipment stores the day key and refuses a day that is already taken', () async {
+      await useCases.bookEquipment(
+          equipment: sampleTractor,
+          date: DateTime(2026, 11, 14),
+          startTime: '08:00',
+          durationOption: '2 hours',
+          location: 'Huye',
+          farmer: sampleFarmer);
+      expect(bookings.created.single.dateKey, '2026-11-14');
+
+      final taken = Equipment(
+        id: sampleTractor.id,
+        name: sampleTractor.name,
+        type: sampleTractor.type,
+        district: sampleTractor.district,
+        price: sampleTractor.price,
+        unit: sampleTractor.unit,
+        ownerId: sampleTractor.ownerId,
+        bookedDates: const ['2026-11-15'],
+      );
+      expect(
+        () => useCases.bookEquipment(
+            equipment: taken,
+            date: DateTime(2026, 11, 15),
+            startTime: '08:00',
+            durationOption: '2 hours',
+            location: 'Huye',
+            farmer: sampleFarmer),
+        throwsA(isA<AppException>()),
+      );
+      expect(bookings.created, hasLength(1));
+      // The next day is still free.
+      await useCases.bookEquipment(
+          equipment: taken,
+          date: DateTime(2026, 11, 16),
+          startTime: '08:00',
+          durationOption: '2 hours',
+          location: 'Huye',
+          farmer: sampleFarmer);
+      expect(bookings.created, hasLength(2));
+
+      // A day the owner blocked is refused too.
+      final blocked = taken.copyWith(blockedDates: const ['2026-11-20']);
+      expect(
+        () => useCases.bookEquipment(
+            equipment: blocked,
+            date: DateTime(2026, 11, 20),
+            startTime: '08:00',
+            durationOption: '2 hours',
+            location: 'Huye',
+            farmer: sampleFarmer),
+        throwsA(isA<AppException>()),
+      );
     });
 
     test('an agent books for a client and the farmer id stays empty', () async {
@@ -310,9 +366,26 @@ void main() {
       expect(catalog.deleted, ['eq1']);
     });
 
-    test('setEquipmentStatus and saveAvailability', () async {
-      await useCases.setEquipmentStatus(sampleTractor, EquipmentStatus.maintenance);
-      expect(catalog.updated.single.status, EquipmentStatus.maintenance);
+    test('setBlockedDays stores sorted keys and refuses booked days', () async {
+      await useCases.setBlockedDays(sampleTractor, [DateTime(2026, 12, 3), DateTime(2026, 12, 1)]);
+      expect(catalog.blocked['eq1'], ['2026-12-01', '2026-12-03']);
+      final booked = sampleTractor.copyWith(blockedDates: const []);
+      const withBooking = Equipment(
+          id: 'eq1',
+          name: 'T',
+          type: 'Tractor',
+          district: 'Huye',
+          price: 1,
+          unit: 'day',
+          bookedDates: ['2026-12-05']);
+      expect(booked.blockedDates, isEmpty);
+      expect(() => useCases.setBlockedDays(withBooking, [DateTime(2026, 12, 5)]),
+          throwsA(isA<AppException>()));
+    });
+
+    test('setMaintenance and saveAvailability', () async {
+      await useCases.setMaintenance(sampleTractor, true);
+      expect(catalog.updated.single.inMaintenance, isTrue);
       const expert = Expert(id: 'ex1', name: 'Dr', field: 'Crops', category: 'Crops');
       await useCases.saveAvailability(expert.copyWith(fee: 12000, sessionMinutes: 45));
       expect(catalog.experts.single.fee, 12000);
@@ -370,7 +443,26 @@ void main() {
       expect(sampleTractor.unitShort, 'hr');
       expect(sampleTractor.copyWith(unit: 'hectare').unitShort, 'ha');
       expect(sampleTractor.copyWith(unit: 'day').unitShort, 'day');
-      expect(sampleTractor.available, isTrue);
+      expect(sampleTractor.bookable, isTrue);
+      expect(sampleTractor.availability, Availability.freeToday);
+      expect(sampleTractor.availabilityLabel, 'Free today');
+      expect(sampleTractor.copyWith(inMaintenance: true).availabilityLabel, 'In maintenance');
+      final n = DateTime.now();
+      String key(int i) => dateKey(DateTime(n.year, n.month, n.day + i));
+      final busy = Equipment(
+          id: 'x',
+          name: 'x',
+          type: 'Tractor',
+          district: 'Huye',
+          price: 1,
+          unit: 'day',
+          bookedDates: [key(0), key(1)],
+          blockedDates: [key(2)]);
+      expect(busy.availability, Availability.freeLater);
+      expect(busy.availabilityLabel, startsWith('Free from'));
+      final full = busy.copyWith(blockedDates: [for (var i = 0; i < 60; i++) key(i)]);
+      expect(full.availabilityLabel, 'Fully booked');
+      expect(full.bookable, isFalse);
     });
 
     test('Booking helpers', () {

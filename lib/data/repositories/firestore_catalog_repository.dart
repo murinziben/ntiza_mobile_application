@@ -29,6 +29,10 @@ class FirestoreCatalogRepository implements CatalogRepository {
       guardData(() => _db.collection('equipment').doc(e.id).update(equipmentToMap(e)));
 
   @override
+  Future<void> setBlockedDates(String id, List<String> dateKeys) =>
+      guardData(() => _db.collection('equipment').doc(id).update({'blockedDates': dateKeys}));
+
+  @override
   Future<void> deleteEquipment(String id) =>
       guardData(() => _db.collection('equipment').doc(id).delete());
 

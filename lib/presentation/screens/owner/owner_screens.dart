@@ -11,6 +11,8 @@ import '../../providers/providers.dart';
 import '../../widgets/location_fields.dart';
 import '../../widgets/ui.dart';
 import '../common/role_widgets.dart';
+import '../farmer/calendar_card.dart';
+import '../public/widgets.dart' show bookedDaysLabel;
 import '../public/public_shell.dart';
 import 'provider_helpers.dart';
 
@@ -28,6 +30,9 @@ final _ownerBookingsProvider = Provider.autoDispose<List<Booking>>((ref) {
   return [for (final b in all) if (!b.expert) b];
 });
 
+const _inMaintenance = 'In maintenance';
+const _hasBookings = 'Has bookings';
+const _freeToday = 'Free today';
 final _equipmentFilterProvider = StateProvider.autoDispose<String>((ref) => 'All');
 final _bookingFilterProvider = StateProvider.autoDispose<String>((ref) => 'Requests');
 
@@ -48,7 +53,7 @@ class OwnerDashboard extends ConsumerWidget {
     final mine = ref.watch(myEquipmentProvider);
     final requests = _withStatus(bookings, BookingStatus.pending);
     final earnings = EarningsView.from(bookings);
-    final inRepair = [for (final e in mine) if (e.status == EquipmentStatus.maintenance) e];
+    final inRepair = [for (final e in mine) if (e.inMaintenance) e];
 
     return Scaffold(
       body: SafeArea(
@@ -61,7 +66,7 @@ class OwnerDashboard extends ConsumerWidget {
             StatGrid([
               StatSpec('${mine.length}', 'My Equipment', Icons.agriculture_outlined,
                   AppColors.green100, AppColors.primaryDark),
-              StatSpec('${mine.where((e) => e.available).length}', 'Available Now',
+              StatSpec('${mine.where((e) => e.availability == Availability.freeToday).length}', 'Free Today',
                   Icons.check_circle_outline, AppColors.blueBg, AppColors.blue),
               StatSpec('${requests.length}', 'Pending Requests', Icons.schedule,
                   AppColors.amberBg, AppColors.amberText),
@@ -127,9 +132,9 @@ class _MaintenanceTile extends ConsumerWidget {
             SoftButton('Ready', onPressed: () async {
               final result = await ref
                   .read(catalogControllerProvider.notifier)
-                  .setEquipmentStatus(equipment, EquipmentStatus.available);
+                  .setMaintenance(equipment, false);
               if (!context.mounted) return;
-              showToast(context, result.ok ? 'Marked available.' : result.error!);
+              showToast(context, result.ok ? 'Maintenance ended.' : result.error!);
             }),
           ],
         ),
@@ -171,14 +176,24 @@ class OwnerEquipmentScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final filter = ref.watch(_equipmentFilterProvider);
     final mine = ref.watch(myEquipmentProvider);
-    final items = [for (final e in mine) if (filter == 'All' || e.status == filter) e];
+    final items = [
+      for (final e in mine)
+        if (filter == 'All' ||
+            (switch (filter) {
+              _inMaintenance => e.inMaintenance,
+              _hasBookings => e.hasUpcomingBookings,
+              _freeToday => e.availability == Availability.freeToday,
+              _ => true,
+            }))
+          e
+    ];
     return Scaffold(
       appBar: const TopBar('My Equipment', back: false),
       body: ListView(
         padding: const EdgeInsets.only(top: 16, bottom: 24),
         children: [
           ChipRow(
-            labels: const ['All', ...EquipmentStatus.all],
+            labels: const ['All', _inMaintenance, _hasBookings, _freeToday],
             selected: filter,
             onSelected: (v) => ref.read(_equipmentFilterProvider.notifier).state = v,
           ),
@@ -204,7 +219,7 @@ class OwnerEquipmentScreen extends ConsumerWidget {
   }
 }
 
-enum _MenuAction { edit, available, booked, maintenance, delete }
+enum _MenuAction { edit, maintenance, blockDates, delete }
 
 /// One machine in the list; the three-dot menu holds its CRUD actions.
 class _EquipmentRow extends ConsumerWidget {
@@ -236,16 +251,32 @@ class _EquipmentRow extends ConsumerWidget {
         final result = await controller.deleteEquipment(equipment);
         if (!context.mounted) return;
         showToast(context, result.ok ? 'Equipment deleted.' : result.error!);
-      case _MenuAction.available || _MenuAction.booked || _MenuAction.maintenance:
-        final status = switch (action) {
-          _MenuAction.available => EquipmentStatus.available,
-          _MenuAction.booked => EquipmentStatus.booked,
-          _ => EquipmentStatus.maintenance,
-        };
-        final result = await controller.setEquipmentStatus(equipment, status);
+      case _MenuAction.blockDates:
+        await _blockDates(context, ref);
+      case _MenuAction.maintenance:
+        final start = !equipment.inMaintenance;
+        final result = await controller.setMaintenance(equipment, start);
         if (!context.mounted) return;
-        showToast(context, result.ok ? 'Marked ${status.toLowerCase()}.' : result.error!);
+        showToast(
+            context,
+            result.ok
+                ? (start ? 'Machine is now in maintenance.' : 'Maintenance ended.')
+                : result.error!);
     }
+  }
+
+  Future<void> _blockDates(BuildContext context, WidgetRef ref) async {
+    final picked = await showModalBottomSheet<Set<DateTime>>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => _BlockDatesSheet(equipment: equipment),
+    );
+    if (picked == null || !context.mounted) return;
+    final result =
+        await ref.read(catalogControllerProvider.notifier).setBlockedDays(equipment, picked);
+    if (!context.mounted) return;
+    showToast(context, result.ok ? 'Unavailable days saved.' : result.error!);
   }
 
   @override
@@ -267,7 +298,21 @@ class _EquipmentRow extends ConsumerWidget {
                       '${equipment.district} · ${rwf(equipment.price)}/${equipment.unitShort} · ${equipment.jobs} jobs',
                       style: const TextStyle(fontSize: 13.5, color: AppColors.muted)),
                   const SizedBox(height: 6),
-                  StatusChip(equipment.statusLabel),
+                  StatusChip(equipment.availabilityLabel),
+                  if (equipment.hasUpcomingBookings) ...[
+                    const SizedBox(height: 6),
+                    Text(bookedDaysLabel(equipment),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.danger)),
+                  ],
+                  if (equipment.upcomingBlockedDays.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text('Unavailable: ${equipment.upcomingBlockedDays.length} day(s)',
+                        style: const TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.amberText)),
+                  ],
                 ],
               ),
             ),
@@ -277,19 +322,69 @@ class _EquipmentRow extends ConsumerWidget {
               onSelected: (a) => _onMenu(context, ref, a),
               itemBuilder: (_) => [
                 const PopupMenuItem(value: _MenuAction.edit, child: Text('Edit')),
-                if (!equipment.available)
-                  const PopupMenuItem(value: _MenuAction.available, child: Text('Mark available')),
-                if (equipment.status != EquipmentStatus.booked)
-                  const PopupMenuItem(value: _MenuAction.booked, child: Text('Mark booked')),
-                if (equipment.status != EquipmentStatus.maintenance)
-                  const PopupMenuItem(
-                      value: _MenuAction.maintenance, child: Text('Mark maintenance')),
+                const PopupMenuItem(value: _MenuAction.blockDates, child: Text('Block dates')),
+                PopupMenuItem(
+                    value: _MenuAction.maintenance,
+                    child: Text(equipment.inMaintenance ? 'End maintenance' : 'Start maintenance')),
                 const PopupMenuItem(value: _MenuAction.delete, child: Text('Delete')),
               ],
             ),
           ],
         ),
       );
+}
+
+/// Calendar where the owner taps days to switch them off (or back on).
+/// Days with a booking are shown in red and cannot be changed.
+class _BlockDatesSheet extends StatefulWidget {
+  const _BlockDatesSheet({required this.equipment});
+  final Equipment equipment;
+
+  @override
+  State<_BlockDatesSheet> createState() => _BlockDatesSheetState();
+}
+
+class _BlockDatesSheetState extends State<_BlockDatesSheet> {
+  late final Set<String> _blocked = {...widget.equipment.blockedDates};
+  DateTime _month = currentMonthStart();
+
+  @override
+  Widget build(BuildContext context) {
+    final e = widget.equipment;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 0, 16, 16 + MediaQuery.of(context).viewInsets.bottom),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Block dates · ${e.name}',
+                style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 4),
+            const Text('Tap a day to make the machine unavailable. Tap again to undo.',
+                style: TextStyle(fontSize: 13.5, color: AppColors.muted)),
+            const SizedBox(height: 12),
+            CalendarCard(
+              month: _month,
+              selected: DateTime(1970),
+              onMonthChanged: (m) => setState(() => _month = m),
+              onSelected: (d) => setState(() {
+                final k = dateKey(d);
+                _blocked.contains(k) ? _blocked.remove(k) : _blocked.add(k);
+              }),
+              isEnabled: (d) => !e.isBookedOn(d),
+              isMarked: e.isBookedOn,
+              isBlocked: (d) => _blocked.contains(dateKey(d)),
+            ),
+            const SizedBox(height: 14),
+            PrimaryButton('Save', height: 52, onPressed: () {
+              Navigator.pop(context, {for (final k in _blocked) DateTime.parse(k)});
+            }),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------

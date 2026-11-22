@@ -73,7 +73,7 @@ class EquipmentTile extends StatelessWidget {
                                 fontSize: 17.5, fontWeight: FontWeight.w700)),
                       ),
                       const SizedBox(width: 8),
-                      StatusChip(item.statusLabel),
+                      StatusChip(item.availabilityLabel),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -87,6 +87,22 @@ class EquipmentTile extends StatelessWidget {
                           style: const TextStyle(fontSize: 14, color: AppColors.muted)),
                     ),
                   ]),
+                  if (item.hasUpcomingBookings) ...[
+                    const SizedBox(height: 8),
+                    Row(children: [
+                      const Icon(Icons.event_busy, size: 17, color: AppColors.danger),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(bookedDaysLabel(item),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.danger)),
+                      ),
+                    ]),
+                  ],
                   const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -215,4 +231,12 @@ class CourseCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// "Booked: 23 Nov, 25 Nov +2 more" — taken days for the machine card.
+String bookedDaysLabel(Equipment e) {
+  final days = e.upcomingBookedDays;
+  final shown = days.take(2).map(dayMonth).join(', ');
+  final more = days.length > 2 ? ' +${days.length - 2} more' : '';
+  return 'Booked: $shown$more';
 }

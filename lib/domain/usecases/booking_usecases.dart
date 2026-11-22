@@ -38,8 +38,14 @@ class BookingUseCases {
     AppUser? agent,
     AgentClient? client,
   }) async {
-    if (equipment.status == EquipmentStatus.maintenance) {
+    if (equipment.inMaintenance) {
       throw const AppException('This machine is under maintenance right now.');
+    }
+    if (equipment.isBlockedOn(date)) {
+      throw const AppException('The owner is not available on that date. Pick another day.');
+    }
+    if (equipment.isBookedOn(date)) {
+      throw const AppException('This machine is already booked on that date. Pick another day.');
     }
     final error = Validators.required(location, 'Farm location');
     if (error != null) throw AppException(error);
@@ -58,6 +64,7 @@ class BookingUseCases {
       image: equipment.image,
       itemId: equipment.id,
       dateLabel: dayMonth(date),
+      dateKey: dateKey(date),
       scheduled: scheduledLabel(date, startTime),
       detail: durationOption,
       place: equipment.district,

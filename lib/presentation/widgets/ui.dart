@@ -146,20 +146,21 @@ class StatusChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = status.toLowerCase();
     Color bg = AppColors.neutral, fg = AppColors.body;
-    if (['available', 'completed', 'paid', 'active', 'approved', 'verified', 'online']
+    if (s.startsWith('free') ||
+        ['available', 'completed', 'paid', 'active', 'approved', 'verified', 'online']
         .contains(s)) {
       bg = AppColors.green100;
       fg = AppColors.primaryDark;
     } else if (['confirmed', 'in progress', 'info', 'open'].contains(s)) {
       bg = AppColors.blueBg;
       fg = AppColors.blue;
-    } else if (['pending', 'booked', 'review', 'maintenance', 'under review'].contains(s)) {
+    } else if (['pending', 'booked', 'review', 'maintenance', 'in maintenance', 'under review'].contains(s)) {
       bg = AppColors.amberBg;
       fg = AppColors.amberText;
     } else if (s == 'expert') {
       bg = AppColors.purpleBg;
       fg = AppColors.purple;
-    } else if (['cancelled', 'rejected', 'suspended', 'disputed', 'overdue'].contains(s)) {
+    } else if (['cancelled', 'rejected', 'suspended', 'disputed', 'overdue', 'fully booked'].contains(s)) {
       bg = AppColors.dangerBg;
       fg = AppColors.danger;
     }

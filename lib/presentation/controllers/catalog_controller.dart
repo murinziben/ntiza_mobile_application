@@ -55,8 +55,11 @@ class CatalogController extends ActionNotifier {
         await ref.read(catalogUseCasesProvider).deleteEquipment(equipment, bookings);
       });
 
-  Future<ActionResult<void>> setEquipmentStatus(Equipment equipment, String status) =>
-      run(() => ref.read(catalogUseCasesProvider).setEquipmentStatus(equipment, status));
+  Future<ActionResult<void>> setMaintenance(Equipment equipment, bool inMaintenance) =>
+      run(() => ref.read(catalogUseCasesProvider).setMaintenance(equipment, inMaintenance));
+
+  Future<ActionResult<void>> setBlockedDays(Equipment equipment, Iterable<DateTime> days) =>
+      run(() => ref.read(catalogUseCasesProvider).setBlockedDays(equipment, days));
 
   Future<ActionResult<void>> saveAvailability(Expert expert) =>
       run(() => ref.read(catalogUseCasesProvider).saveAvailability(expert));

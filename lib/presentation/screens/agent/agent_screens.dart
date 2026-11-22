@@ -458,11 +458,21 @@ class _AgentNewBookingScreenState extends ConsumerState<AgentNewBookingScreen> {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final current = ref.read(_bookingDateProvider);
+    final machineId = ref.read(_selectedEquipmentIdProvider);
+    final machine = machineId == null ? null : ref.read(equipmentByIdProvider(machineId));
+    final lastDate = today.add(const Duration(days: 365));
+    bool free(DateTime d) => machine == null || !machine.isUnavailableOn(d);
+    // The picker requires a selectable initial day, so start at the first free one.
+    var initial = current.isBefore(today) ? today : current;
+    while (!free(initial) && initial.isBefore(lastDate)) {
+      initial = initial.add(const Duration(days: 1));
+    }
     final picked = await showDatePicker(
       context: context,
-      initialDate: current.isBefore(today) ? today : current,
+      initialDate: initial,
       firstDate: today,
-      lastDate: today.add(const Duration(days: 365)),
+      lastDate: lastDate,
+      selectableDayPredicate: (d) => free(d),
     );
     if (picked != null) ref.read(_bookingDateProvider.notifier).state = picked;
   }
@@ -495,7 +505,7 @@ class _AgentNewBookingScreenState extends ConsumerState<AgentNewBookingScreen> {
     final clients = ref.watch(agentClientsProvider).valueOrNull ?? const <AgentClient>[];
     final available = [
       for (final e in ref.watch(equipmentProvider).valueOrNull ?? const <Equipment>[])
-        if (e.available) e,
+        if (e.bookable) e,
     ];
     final client = _findClient(clients, ref.watch(_selectedClientIdProvider));
     final equipmentId = ref.watch(_selectedEquipmentIdProvider);

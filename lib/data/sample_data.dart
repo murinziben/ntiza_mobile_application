@@ -27,7 +27,6 @@ const sampleEquipment = <Equipment>[
     sector: 'Cyuve',
     price: 60000,
     unit: 'hour',
-    status: EquipmentStatus.booked,
     ownerId: 'demo-owner',
     ownerName: 'Musanze Agro Services',
     jobs: 52,

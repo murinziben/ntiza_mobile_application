@@ -46,7 +46,10 @@ void main() {
         'ignored',
       ],
     });
-    expect(e.available, isFalse);
+    // The retired 'Booked' status reads as not in maintenance; dates decide bookings now.
+    expect(e.inMaintenance, isFalse);
+    expect(equipmentFromMap('e2', {'status': 'Maintenance'}).inMaintenance, isTrue);
+    expect(equipmentFromMap('e3', {'inMaintenance': true}).inMaintenance, isTrue);
     expect(e.specs.single.key, 'Power');
     expect(e.jobs, 3);
     final map = equipmentToMap(e);

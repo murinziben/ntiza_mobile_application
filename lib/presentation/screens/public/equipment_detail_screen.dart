@@ -72,7 +72,7 @@ class EquipmentDetailScreen extends ConsumerWidget {
                                       fontSize: 24, fontWeight: FontWeight.w800)),
                             ),
                             const SizedBox(width: 8),
-                            StatusChip(e.statusLabel),
+                            StatusChip(e.availabilityLabel),
                           ],
                         ),
                         const SizedBox(height: 10),
@@ -102,9 +102,25 @@ class EquipmentDetailScreen extends ConsumerWidget {
                         Text(e.about.isEmpty ? 'No description provided.' : e.about,
                             style: const TextStyle(
                                 fontSize: 16, height: 1.5, color: AppColors.body)),
-                        if (!e.available) ...[
+                        if (e.hasUpcomingBookings) ...[
                           const SizedBox(height: 18),
-                          _UnavailableNote(status: e.statusLabel),
+                          _DaysNote(
+                              days: e.upcomingBookedDays,
+                              label: 'Already booked on',
+                              color: AppColors.danger,
+                              bg: AppColors.dangerBg),
+                        ],
+                        if (e.upcomingBlockedDays.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          _DaysNote(
+                              days: e.upcomingBlockedDays,
+                              label: 'Owner unavailable on',
+                              color: AppColors.amberText,
+                              bg: AppColors.amberBg),
+                        ],
+                        if (!e.bookable) ...[
+                          const SizedBox(height: 18),
+                          _UnavailableNote(maintenance: e.inMaintenance),
                         ],
                         const SizedBox(height: 16),
                       ],
@@ -140,9 +156,9 @@ class EquipmentDetailScreen extends ConsumerWidget {
                     const SizedBox(width: 20),
                     Expanded(
                       child: PrimaryButton(
-                        e.available ? 'Book Now' : 'Not available',
+                        e.bookable ? 'Book Now' : 'Not available',
                         height: 54,
-                        onPressed: e.available
+                        onPressed: e.bookable
                             ? () => context.push(signedIn ? '/farmer/book/${e.id}' : '/login')
                             : null,
                       ),
@@ -218,8 +234,8 @@ class _SpecBox extends StatelessWidget {
 
 /// Explains why the Book button is disabled.
 class _UnavailableNote extends StatelessWidget {
-  const _UnavailableNote({required this.status});
-  final String status;
+  const _UnavailableNote({required this.maintenance});
+  final bool maintenance;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -233,8 +249,11 @@ class _UnavailableNote extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                  'This machine is currently ${status.toLowerCase()} and cannot be booked. '
-                  'Please check back later or browse other equipment.',
+                  maintenance
+                      ? 'This machine is in maintenance and cannot be booked. '
+                          'Please check back later or browse other equipment.'
+                      : 'This machine is fully booked for the next ${Equipment.horizonDays} days. '
+                          'Please check back later or browse other equipment.',
                   style: const TextStyle(color: AppColors.amberText, fontSize: 14, height: 1.4)),
             ),
           ],
@@ -262,4 +281,32 @@ class _RoundBtn extends StatelessWidget {
           ),
         ),
       );
+}
+
+class _DaysNote extends StatelessWidget {
+  const _DaysNote({required this.days, required this.label, required this.color, required this.bg});
+  final List<DateTime> days;
+  final String label;
+  final Color color;
+  final Color bg;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(AppRadius.input)),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.event_busy, size: 20, color: color),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text('$label ${days.map(dayMonth).join(', ')}. Other days are free.',
+                style: TextStyle(fontSize: 14.5, height: 1.4, color: color)),
+          ),
+        ],
+      ),
+    );
+  }
 }

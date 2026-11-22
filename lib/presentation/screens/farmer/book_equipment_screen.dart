@@ -14,7 +14,8 @@ const _starts = ['06:00', '08:00', '10:00', '12:00', '14:00'];
 
 // Booking form state (kept in providers instead of widget State).
 final _monthProvider = StateProvider.autoDispose<DateTime>((ref) => currentMonthStart());
-final _dateProvider = StateProvider.autoDispose<DateTime>((ref) => tomorrow());
+/// Picked service date; null means "the first free day from tomorrow".
+final _dateProvider = StateProvider.autoDispose<DateTime?>((ref) => null);
 final _startProvider = StateProvider.autoDispose<String>((ref) => '08:00');
 
 /// Selected duration option; null means "use the default for this unit".
@@ -58,7 +59,7 @@ class _BookEquipmentScreenState extends ConsumerState<BookEquipmentScreen> {
         ref.read(_durationProvider) ?? durations[BookingPricing.defaultDurationIndex(e.unit)];
     final result = await ref.read(bookingControllerProvider.notifier).bookEquipment(
           equipment: e,
-          date: ref.read(_dateProvider),
+          date: ref.read(_dateProvider) ?? e.firstFreeDay(tomorrow()),
           startTime: ref.read(_startProvider),
           durationOption: duration,
           location: formatPlace(_place, _landmark.text),
@@ -80,7 +81,7 @@ class _BookEquipmentScreenState extends ConsumerState<BookEquipmentScreen> {
           body: Center(child: Text('This machine is no longer listed.')));
     }
     final month = ref.watch(_monthProvider);
-    final date = ref.watch(_dateProvider);
+    final date = ref.watch(_dateProvider) ?? e.firstFreeDay(tomorrow());
     final start = ref.watch(_startProvider);
     final busy = ref.watch(bookingControllerProvider).busy;
 
@@ -137,6 +138,9 @@ class _BookEquipmentScreenState extends ConsumerState<BookEquipmentScreen> {
               selected: date,
               onMonthChanged: (m) => ref.read(_monthProvider.notifier).state = m,
               onSelected: (d) => ref.read(_dateProvider.notifier).state = d,
+              isEnabled: (d) => !e.isUnavailableOn(d),
+              isMarked: e.isBookedOn,
+              isBlocked: e.isBlockedOn,
             ),
             const SizedBox(height: 18),
             Row(

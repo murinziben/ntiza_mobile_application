@@ -9,6 +9,9 @@ abstract class CatalogRepository {
   Future<void> updateEquipment(Equipment equipment);
   Future<void> deleteEquipment(String id);
 
+  /// Replaces the owner-blocked days (`yyyy-MM-dd`) of a machine.
+  Future<void> setBlockedDates(String id, List<String> dateKeys);
+
   Stream<List<Expert>> watchExperts();
   Future<void> saveExpert(Expert expert);
 

@@ -265,7 +265,7 @@ void main() {
       final t = _setup(me: sampleOwner);
       final c = t.container.read(catalogControllerProvider.notifier);
       expect((await c.deleteEquipment(sampleTractor)).ok, isTrue);
-      expect((await c.setEquipmentStatus(sampleTractor, EquipmentStatus.maintenance)).ok, isTrue);
+      expect((await c.setMaintenance(sampleTractor, true)).ok, isTrue);
       const expert = Expert(id: 'ex1', name: 'Dr', field: 'f', category: 'c');
       expect((await c.saveAvailability(expert)).ok, isTrue);
     });

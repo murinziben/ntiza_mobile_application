@@ -41,6 +41,7 @@ class Booking {
     this.paidVia,
     this.agentId = '',
     this.clientName = '',
+    this.dateKey = '',
     this.createdAt,
   });
 
@@ -52,6 +53,9 @@ class Booking {
   final String image;
   final String status;
   final String dateLabel;
+
+  /// `yyyy-MM-dd` of the service day, used to block double booking.
+  final String dateKey;
   final String detail;
   final String place;
   final int total;

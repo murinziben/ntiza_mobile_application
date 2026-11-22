@@ -64,9 +64,14 @@ Equipment equipmentFromMap(String id, Map<String, dynamic> m) => Equipment(
       sector: _s(m, 'sector'),
       price: _i(m, 'price'),
       unit: _s(m, 'unit', 'hour'),
-      status: _s(m, 'status', EquipmentStatus.available),
+      // Older records stored a `status` string; only 'Maintenance' still counts.
+      inMaintenance: m['inMaintenance'] is bool
+          ? m['inMaintenance'] as bool
+          : m['status'] == 'Maintenance',
       about: _s(m, 'about'),
       jobs: _i(m, 'jobs'),
+      blockedDates: [for (final d in (m['blockedDates'] as List? ?? const [])) d.toString()],
+      bookedDates: [for (final d in (m['bookedDates'] as List? ?? const [])) d.toString()],
       specs: [
         for (final raw in (m['specs'] as List? ?? const []))
           if (raw is Map) Spec((raw['k'] ?? '').toString(), (raw['v'] ?? '').toString()),
@@ -84,7 +89,7 @@ Map<String, dynamic> equipmentToMap(Equipment e) => {
       'sector': e.sector,
       'price': e.price,
       'unit': e.unit,
-      'status': e.status,
+      'inMaintenance': e.inMaintenance,
       'about': e.about,
       'specs': [
         for (final s in e.specs) {'k': s.key, 'v': s.value}
@@ -168,6 +173,7 @@ Booking bookingFromMap(String id, Map<String, dynamic> m) => Booking(
       paidVia: m['paidVia'] as String?,
       agentId: _s(m, 'agentId'),
       clientName: _s(m, 'clientName'),
+      dateKey: _s(m, 'dateKey'),
       createdAt: _ts(m['createdAt']),
     );
 
@@ -177,6 +183,7 @@ Map<String, dynamic> newBookingToMap(NewBooking b) => {
       'image': b.image,
       'status': BookingStatus.pending,
       'dateLabel': b.dateLabel,
+      'dateKey': b.dateKey,
       'scheduled': b.scheduled,
       'detail': b.detail,
       'place': b.place,

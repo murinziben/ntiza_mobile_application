@@ -178,6 +178,11 @@ class FakeCatalogRepository implements CatalogRepository {
   @override
   Future<void> deleteEquipment(String id) async => deleted.add(id);
 
+  final blocked = <String, List<String>>{};
+
+  @override
+  Future<void> setBlockedDates(String id, List<String> dateKeys) async => blocked[id] = dateKeys;
+
   @override
   Stream<List<Expert>> watchExperts() => Stream.value(experts);
 
