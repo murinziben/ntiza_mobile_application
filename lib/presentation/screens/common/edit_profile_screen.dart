@@ -3,13 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../domain/constants.dart';
 import '../../../domain/validators.dart';
+import '../../providers/locations_provider.dart';
 import '../../providers/providers.dart';
+import '../../widgets/location_fields.dart';
 import '../../widgets/ui.dart';
 
-/// District picked while editing (`null` until the profile has loaded).
-final _districtProvider = StateProvider.autoDispose<String?>((ref) => null);
+/// District and sector picked while editing (`null` until the user changes them).
+final _placeProvider = StateProvider.autoDispose<Place?>((ref) => null);
 
 /// Lets a signed-in user change name, phone and district. E-mail is shown
 /// read-only because it identifies the Firebase account.
@@ -44,10 +45,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     final me = ref.read(profileProvider).valueOrNull;
+    final place = ref.read(_placeProvider) ?? placeFrom(ref.read(locationsProvider), me?.district, me?.sector);
     final result = await ref.read(authControllerProvider.notifier).updateProfile(
           name: _name.text,
           phone: _phone.text,
-          district: ref.read(_districtProvider) ?? me?.district ?? '',
+          district: place.district ?? '',
+          sector: place.sector ?? '',
         );
     if (!mounted) return;
     if (result.ok) {
@@ -62,8 +65,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   Widget build(BuildContext context) {
     final me = ref.watch(profileProvider).valueOrNull;
     final busy = ref.watch(authControllerProvider).busy;
-    final chosen = ref.watch(_districtProvider) ?? me?.district;
-    final district = districts.contains(chosen) ? chosen : null;
+    final place = ref.watch(_placeProvider) ?? placeFrom(ref.read(locationsProvider), me?.district, me?.sector);
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: const TopBar('Personal Information'),
@@ -92,21 +94,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 textInputAction: TextInputAction.done,
                 validator: Validators.phone),
             const SizedBox(height: 16),
-            const Text('District',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.body)),
-            const SizedBox(height: 8),
-            DropdownButtonFormField<String>(
-              // Re-created when the profile arrives so the stored district shows.
-              key: ValueKey('district-${district ?? 'none'}'),
-              initialValue: district,
-              isExpanded: true,
-              validator: Validators.district,
-              decoration: const InputDecoration(
-                hintText: 'Select district',
-                prefixIcon: Icon(Icons.location_on_outlined, color: AppColors.muted),
-              ),
-              items: [for (final d in districts) DropdownMenuItem(value: d, child: Text(d))],
-              onChanged: (v) => ref.read(_districtProvider.notifier).state = v,
+            LocationFields(
+              value: place,
+              onChanged: (v) => ref.read(_placeProvider.notifier).state = v,
             ),
             const SizedBox(height: 16),
             AppCard(

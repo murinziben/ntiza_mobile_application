@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../domain/constants.dart';
+import '../../providers/locations_provider.dart';
 import '../../providers/providers.dart';
 import '../../widgets/ui.dart';
 
@@ -18,6 +18,7 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsControllerProvider);
+    final locations = ref.watch(locationsProvider);
     final controller = ref.read(settingsControllerProvider.notifier);
     final sizeLabel = _textSizes.entries
         .firstWhere((e) => e.value == settings.textScale,
@@ -81,16 +82,17 @@ class SettingsScreen extends ConsumerWidget {
                       style: TextStyle(fontSize: 13.5, color: AppColors.muted)),
                 ),
                 DropdownButtonFormField<String>(
-                  initialValue: districts.contains(settings.preferredDistrict)
+                  initialValue: locations.hasDistrict(settings.preferredDistrict)
                       ? settings.preferredDistrict
                       : '',
                   isExpanded: true,
+                  menuMaxHeight: 360,
                   decoration: const InputDecoration(
                     prefixIcon: Icon(Icons.location_on_outlined, color: AppColors.muted),
                   ),
                   items: [
                     const DropdownMenuItem(value: '', child: Text('All districts')),
-                    for (final d in districts) DropdownMenuItem(value: d, child: Text(d)),
+                    for (final d in locations.districts) DropdownMenuItem(value: d, child: Text(d)),
                   ],
                   onChanged: (v) => controller.setPreferredDistrict(v ?? ''),
                 ),

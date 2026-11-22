@@ -39,6 +39,7 @@ class AppUser {
     this.phone = '',
     this.email = '',
     this.district = '',
+    this.sector = '',
     this.createdAt,
   });
 
@@ -47,6 +48,7 @@ class AppUser {
   final String phone;
   final String email;
   final String district;
+  final String sector;
   final String status;
   final Role role;
   final DateTime? createdAt;
@@ -63,6 +65,7 @@ class AppUser {
     String? name,
     String? phone,
     String? district,
+    String? sector,
     String? status,
     Role? role,
   }) =>
@@ -72,6 +75,7 @@ class AppUser {
         phone: phone ?? this.phone,
         email: email,
         district: district ?? this.district,
+        sector: sector ?? this.sector,
         status: status ?? this.status,
         role: role ?? this.role,
         createdAt: createdAt,

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../domain/constants.dart';
+import '../../providers/locations_provider.dart';
 import '../../providers/providers.dart';
 import '../../widgets/ui.dart';
 import 'widgets.dart';
@@ -17,8 +17,11 @@ final _queryProvider = StateProvider.autoDispose<String>((ref) => '');
 /// Starts on the district saved in Settings, but can be changed here.
 final _districtProvider = StateProvider.autoDispose<String>((ref) {
   final saved = ref.read(settingsControllerProvider).preferredDistrict;
-  return saved.isEmpty ? _allDistricts : saved;
+  return ref.read(locationsProvider).hasDistrict(saved) ? saved : _allDistricts;
 });
+
+/// Sector inside the chosen district; empty means the whole district.
+final _sectorProvider = StateProvider.autoDispose<String>((ref) => '');
 
 /// Browse and filter every machine on the platform.
 class MarketplaceScreen extends ConsumerWidget {
@@ -28,6 +31,8 @@ class MarketplaceScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final type = ref.watch(_typeProvider);
     final district = ref.watch(_districtProvider);
+    final sector = ref.watch(_sectorProvider);
+    final locations = ref.watch(locationsProvider);
     final q = ref.watch(_queryProvider).trim().toLowerCase();
 
     return Scaffold(
@@ -49,16 +54,59 @@ class MarketplaceScreen extends ConsumerWidget {
             onSelected: (v) => ref.read(_typeProvider.notifier).state = v,
           ),
           const SizedBox(height: 10),
-          ChipRow(
-            labels: const [_allDistricts, ...districts],
-            selected: district,
-            onSelected: (v) => ref.read(_districtProvider.notifier).state = v,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    key: ValueKey('district-$district'),
+                    initialValue: district,
+                    isExpanded: true,
+                    menuMaxHeight: 360,
+                    decoration: const InputDecoration(
+                      prefixIcon: Icon(Icons.location_on_outlined, color: AppColors.muted),
+                    ),
+                    items: [
+                      for (final d in [_allDistricts, ...locations.districts])
+                        DropdownMenuItem(value: d, child: Text(d, overflow: TextOverflow.ellipsis)),
+                    ],
+                    onChanged: (v) {
+                      ref.read(_districtProvider.notifier).state = v ?? _allDistricts;
+                      ref.read(_sectorProvider.notifier).state = '';
+                    },
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    key: ValueKey('sector-$district-$sector'),
+                    initialValue: sector,
+                    isExpanded: true,
+                    menuMaxHeight: 360,
+                    decoration: const InputDecoration(
+                      prefixIcon: Icon(Icons.place_outlined, color: AppColors.muted),
+                    ),
+                    items: [
+                      const DropdownMenuItem(value: '', child: Text('All sectors')),
+                      for (final s in locations.sectorsOf(district))
+                        DropdownMenuItem(value: s, child: Text(s, overflow: TextOverflow.ellipsis)),
+                    ],
+                    onChanged: district == _allDistricts
+                        ? null
+                        : (v) => ref.read(_sectorProvider.notifier).state = v ?? '',
+                  ),
+                ),
+              ],
+            ),
           ),
           asyncSection(ref.watch(equipmentProvider), (all) {
             final items = all
                 .where((e) =>
                     (type == 'All' || e.type == type) &&
                     (district == _allDistricts || e.district == district) &&
+                    (sector.isEmpty || e.sector == sector) &&
                     (q.isEmpty ||
                         e.name.toLowerCase().contains(q) ||
                         e.district.toLowerCase().contains(q)))

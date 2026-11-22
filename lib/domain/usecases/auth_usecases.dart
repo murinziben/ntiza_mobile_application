@@ -25,6 +25,7 @@ class AuthUseCases {
     required String email,
     required String phone,
     required String district,
+    String sector = '',
     required String password,
     required String confirmPassword,
   }) async {
@@ -43,6 +44,7 @@ class AuthUseCases {
       email: email.trim().toLowerCase(),
       phone: normalizePhone(phone),
       district: district,
+      sector: sector,
       role: role,
       status: statusFor(role),
     );
@@ -60,6 +62,7 @@ class AuthUseCases {
     required String name,
     required String phone,
     required String district,
+    String sector = '',
   }) async {
     final error =
         Validators.fullName(name) ?? Validators.phone(phone) ?? Validators.district(district);
@@ -70,6 +73,7 @@ class AuthUseCases {
       email: session.email.toLowerCase(),
       phone: normalizePhone(phone),
       district: district,
+      sector: sector,
       role: role,
       status: statusFor(role),
     );
@@ -84,12 +88,18 @@ class AuthUseCases {
   }
 
   Future<void> updateProfile(String uid,
-      {required String name, required String phone, required String district}) async {
+      {required String name,
+      required String phone,
+      required String district,
+      String sector = ''}) async {
     final error =
         Validators.fullName(name) ?? Validators.phone(phone) ?? Validators.district(district);
     if (error != null) throw AppException(error);
     await _auth.updateProfile(uid,
-        name: name.trim(), phone: normalizePhone(phone), district: district);
+        name: name.trim(),
+        phone: normalizePhone(phone),
+        district: district,
+        sector: sector);
   }
 
   /// Partner roles start `pending`, everyone else `active`.

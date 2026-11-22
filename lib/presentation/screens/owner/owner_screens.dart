@@ -3,11 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../domain/constants.dart';
 import '../../../domain/entities/entities.dart';
 import '../../../domain/usecases/pricing.dart';
 import '../../../domain/validators.dart';
+import '../../providers/locations_provider.dart';
 import '../../providers/providers.dart';
+import '../../widgets/location_fields.dart';
 import '../../widgets/ui.dart';
 import '../common/role_widgets.dart';
 import '../public/public_shell.dart';
@@ -297,15 +298,19 @@ class _EquipmentRow extends ConsumerWidget {
 
 /// Dropdown choices of the equipment form.
 class _FormDraft {
-  const _FormDraft({required this.type, required this.unit, required this.district});
+  const _FormDraft(
+      {required this.type, required this.unit, required this.district, required this.sector});
   final String type;
   final String unit;
   final String district;
+  final String sector;
 
-  _FormDraft copyWith({String? type, String? unit, String? district}) => _FormDraft(
+  _FormDraft copyWith({String? type, String? unit, String? district, String? sector}) =>
+      _FormDraft(
         type: type ?? this.type,
         unit: unit ?? this.unit,
         district: district ?? this.district,
+        sector: sector ?? this.sector,
       );
 }
 
@@ -318,12 +323,13 @@ class _FormDraftNotifier extends AutoDisposeFamilyNotifier<_FormDraft, String?> 
       type: existing?.type ?? equipmentTypes.first,
       unit: existing?.unit ?? equipmentUnits.first,
       district: existing?.district ?? '',
+      sector: existing?.sector ?? '',
     );
   }
 
   void setType(String v) => state = state.copyWith(type: v);
   void setUnit(String v) => state = state.copyWith(unit: v);
-  void setDistrict(String v) => state = state.copyWith(district: v);
+  void setPlace(Place v) => state = state.copyWith(district: v.district ?? '', sector: v.sector ?? '');
 }
 
 final _formDraftProvider = NotifierProvider.autoDispose
@@ -342,7 +348,6 @@ class _EquipmentFormScreenState extends ConsumerState<EquipmentFormScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _name;
   late final TextEditingController _price;
-  late final TextEditingController _sector;
   late final TextEditingController _about;
 
   @override
@@ -352,7 +357,6 @@ class _EquipmentFormScreenState extends ConsumerState<EquipmentFormScreen> {
     final e = id == null ? null : ref.read(equipmentByIdProvider(id));
     _name = TextEditingController(text: e?.name ?? '');
     _price = TextEditingController(text: e == null ? '' : '${e.price}');
-    _sector = TextEditingController(text: e?.sector ?? '');
     _about = TextEditingController(text: e?.about ?? '');
   }
 
@@ -360,7 +364,6 @@ class _EquipmentFormScreenState extends ConsumerState<EquipmentFormScreen> {
   void dispose() {
     _name.dispose();
     _price.dispose();
-    _sector.dispose();
     _about.dispose();
     super.dispose();
   }
@@ -377,7 +380,7 @@ class _EquipmentFormScreenState extends ConsumerState<EquipmentFormScreen> {
           priceText: _price.text,
           unit: draft.unit,
           district: draft.district,
-          sector: _sector.text,
+          sector: draft.sector,
           about: _about.text,
         );
     if (!mounted) return;
@@ -432,10 +435,7 @@ class _EquipmentFormScreenState extends ConsumerState<EquipmentFormScreen> {
     final draft = ref.watch(_formDraftProvider(id));
     final notifier = ref.read(_formDraftProvider(id).notifier);
     final busy = ref.watch(catalogControllerProvider).busy;
-    final districtOptions = {
-      ...districts,
-      if (draft.district.isNotEmpty) draft.district,
-    }.toList();
+    final place = placeFrom(ref.read(locationsProvider), draft.district, draft.sector);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -516,20 +516,10 @@ class _EquipmentFormScreenState extends ConsumerState<EquipmentFormScreen> {
               ],
             ),
             const SizedBox(height: 14),
-            _dropdown(
-              label: 'District',
-              icon: Icons.location_on_outlined,
-              value: draft.district.isEmpty ? null : draft.district,
-              options: districtOptions,
-              validator: Validators.district,
-              onChanged: notifier.setDistrict,
+            LocationFields(
+              value: place,
+              onChanged: notifier.setPlace,
             ),
-            const SizedBox(height: 14),
-            LabeledField('Sector',
-                hint: 'e.g. Mbazi',
-                icon: Icons.place_outlined,
-                controller: _sector,
-                textInputAction: TextInputAction.next),
             const SizedBox(height: 14),
             LabeledField('Description',
                 hint: 'Suitable for large farms...',

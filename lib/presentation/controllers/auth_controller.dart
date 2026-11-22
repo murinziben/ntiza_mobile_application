@@ -27,6 +27,7 @@ class AuthController extends ActionNotifier {
     required String email,
     required String phone,
     required String district,
+    String sector = '',
     required String password,
     required String confirmPassword,
   }) =>
@@ -36,6 +37,7 @@ class AuthController extends ActionNotifier {
             email: email,
             phone: phone,
             district: district,
+            sector: sector,
             password: password,
             confirmPassword: confirmPassword,
           ));
@@ -59,6 +61,7 @@ class AuthController extends ActionNotifier {
     required String name,
     required String phone,
     required String district,
+    String sector = '',
   }) =>
       run(() async {
         final session = ref.read(sessionProvider).valueOrNull;
@@ -69,6 +72,7 @@ class AuthController extends ActionNotifier {
               name: name,
               phone: phone,
               district: district,
+              sector: sector,
             );
       });
 
@@ -76,13 +80,15 @@ class AuthController extends ActionNotifier {
     required String name,
     required String phone,
     required String district,
+    String sector = '',
   }) =>
       run(() async {
         final uid = ref.read(currentUidProvider);
         if (uid == null) throw const AppException('Please log in again.');
         await ref
             .read(authUseCasesProvider)
-            .updateProfile(uid, name: name, phone: phone, district: district);
+            .updateProfile(uid,
+                name: name, phone: phone, district: district, sector: sector);
       });
 
   Future<ActionResult<void>> signOut() => run(() => ref.read(authRepositoryProvider).signOut());

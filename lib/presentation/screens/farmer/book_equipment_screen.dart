@@ -4,8 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../domain/usecases/pricing.dart';
-import '../../../domain/validators.dart';
+import '../../providers/locations_provider.dart';
 import '../../providers/providers.dart';
+import '../../widgets/location_fields.dart';
 import '../../widgets/ui.dart';
 import 'calendar_card.dart';
 
@@ -30,19 +31,21 @@ class BookEquipmentScreen extends ConsumerStatefulWidget {
 
 class _BookEquipmentScreenState extends ConsumerState<BookEquipmentScreen> {
   final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _location;
+  final _landmark = TextEditingController();
+  Place _place = emptyPlace;
   final _notes = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    // Pre-fill with the farmer's district; they can refine it.
-    _location = TextEditingController(text: ref.read(profileProvider).valueOrNull?.district ?? '');
+    // Pre-fill with the farmer's own district and sector; they can change it.
+    final me = ref.read(profileProvider).valueOrNull;
+    _place = placeFrom(ref.read(locationsProvider), me?.district, me?.sector);
   }
 
   @override
   void dispose() {
-    _location.dispose();
+    _landmark.dispose();
     _notes.dispose();
     super.dispose();
   }
@@ -58,7 +61,7 @@ class _BookEquipmentScreenState extends ConsumerState<BookEquipmentScreen> {
           date: ref.read(_dateProvider),
           startTime: ref.read(_startProvider),
           durationOption: duration,
-          location: _location.text,
+          location: formatPlace(_place, _landmark.text),
         );
     if (!mounted) return;
     if (!result.ok) {
@@ -151,12 +154,19 @@ class _BookEquipmentScreenState extends ConsumerState<BookEquipmentScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            LabeledField('Farm location',
-                hint: 'e.g. Huye · Mbazi',
-                icon: Icons.location_on_outlined,
-                controller: _location,
-                textInputAction: TextInputAction.next,
-                validator: (v) => Validators.required(v, 'Farm location')),
+            const Text('Farm location',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.body)),
+            const SizedBox(height: 10),
+            LocationFields(
+              value: _place,
+              onChanged: (v) => setState(() => _place = v),
+            ),
+            const SizedBox(height: 16),
+            LabeledField('Village or landmark (optional)',
+                hint: 'e.g. near the school',
+                icon: Icons.flag_outlined,
+                controller: _landmark,
+                textInputAction: TextInputAction.next),
             const SizedBox(height: 16),
             LabeledField('Notes for the operator',
                 hint: 'e.g. 2 ha maize field, ploughing',

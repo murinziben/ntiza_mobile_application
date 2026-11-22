@@ -96,11 +96,13 @@ final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: seen ? '/home' : '/welcome',
     refreshListenable: refresh,
-    redirect: (context, state) => decideRedirect(
-      loc: state.matchedLocation,
-      session: ref.read(sessionProvider),
-      profile: ref.read(profileProvider),
-    ),
+    redirect: (context, state) {
+      final session = ref.read(sessionProvider);
+      final profile = ref.read(profileProvider);
+      final to = decideRedirect(loc: state.matchedLocation, session: session, profile: profile);
+      debugPrint('REDIRECT[DEBUG] loc=${state.matchedLocation} session=$session profile=$profile -> $to');
+      return to;
+    },
     routes: [
       GoRoute(path: '/welcome', builder: (_, __) => const WelcomeScreen()),
       GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),

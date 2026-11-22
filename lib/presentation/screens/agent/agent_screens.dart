@@ -3,11 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../domain/constants.dart';
 import '../../../domain/entities/entities.dart';
 import '../../../domain/usecases/pricing.dart';
 import '../../../domain/validators.dart';
+import '../../providers/locations_provider.dart';
 import '../../providers/providers.dart';
+import '../../widgets/location_fields.dart';
 import '../../widgets/ui.dart';
 import '../common/role_widgets.dart';
 import '../public/public_shell.dart';
@@ -323,13 +324,12 @@ class _ClientDialogState extends ConsumerState<_ClientDialog> {
   late final TextEditingController _name = TextEditingController(text: widget.existing?.name ?? '');
   late final TextEditingController _phone =
       TextEditingController(text: widget.existing?.phone ?? '');
-  String? _district;
+  Place _place = emptyPlace;
 
   @override
   void initState() {
     super.initState();
-    final d = widget.existing?.district;
-    _district = districts.contains(d) ? d : null;
+    _place = placeFrom(ref.read(locationsProvider), widget.existing?.district, null);
   }
 
   @override
@@ -346,7 +346,7 @@ class _ClientDialogState extends ConsumerState<_ClientDialog> {
           existing: widget.existing,
           name: _name.text,
           phone: _phone.text,
-          district: _district ?? '',
+          district: _place.district ?? '',
         );
     if (!mounted) return;
     if (result.ok) {
@@ -384,20 +384,10 @@ class _ClientDialogState extends ConsumerState<_ClientDialog> {
                   validator: Validators.phone,
                   textInputAction: TextInputAction.next),
               const SizedBox(height: 14),
-              const Text('District',
-                  style:
-                      TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.body)),
-              const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
-                initialValue: _district,
-                isExpanded: true,
-                validator: Validators.district,
-                decoration: const InputDecoration(
-                  hintText: 'Select district',
-                  prefixIcon: Icon(Icons.location_on_outlined, color: AppColors.muted),
-                ),
-                items: [for (final d in districts) DropdownMenuItem(value: d, child: Text(d))],
-                onChanged: (v) => _district = v,
+              LocationFields(
+                value: _place,
+                showSector: false,
+                onChanged: (v) => setState(() => _place = v),
               ),
               if (error != null) ...[
                 const SizedBox(height: 12),
@@ -446,7 +436,8 @@ class AgentNewBookingScreen extends ConsumerStatefulWidget {
 
 class _AgentNewBookingScreenState extends ConsumerState<AgentNewBookingScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _location = TextEditingController();
+  final _landmark = TextEditingController();
+  Place _place = emptyPlace;
 
   @override
   void initState() {
@@ -454,12 +445,12 @@ class _AgentNewBookingScreenState extends ConsumerState<AgentNewBookingScreen> {
     // Arriving from the Farmers tab with a farmer already chosen.
     final clients = ref.read(agentClientsProvider).valueOrNull ?? const <AgentClient>[];
     final c = _findClient(clients, ref.read(_selectedClientIdProvider));
-    if (c != null) _location.text = c.district;
+    if (c != null) _place = placeFrom(ref.read(locationsProvider), c.district, null);
   }
 
   @override
   void dispose() {
-    _location.dispose();
+    _landmark.dispose();
     super.dispose();
   }
 
@@ -484,7 +475,7 @@ class _AgentNewBookingScreenState extends ConsumerState<AgentNewBookingScreen> {
           date: ref.read(_bookingDateProvider),
           startTime: ref.read(_startTimeProvider),
           durationOption: duration,
-          location: _location.text,
+          location: formatPlace(_place, _landmark.text),
         );
     if (!mounted) return;
     if (!result.ok) {
@@ -495,7 +486,7 @@ class _AgentNewBookingScreenState extends ConsumerState<AgentNewBookingScreen> {
     ref.invalidate(_selectedClientIdProvider);
     ref.invalidate(_selectedEquipmentIdProvider);
     ref.invalidate(_durationIndexProvider);
-    _location.clear();
+    _landmark.clear();
     context.go('/agent');
   }
 
@@ -519,7 +510,7 @@ class _AgentNewBookingScreenState extends ConsumerState<AgentNewBookingScreen> {
     // Pre-fill the location with the farmer's district whenever the farmer changes.
     ref.listen<String?>(_selectedClientIdProvider, (_, next) {
       final c = _findClient(ref.read(agentClientsProvider).valueOrNull ?? const [], next);
-      if (c != null) _location.text = c.district;
+      if (c != null) setState(() => _place = placeFrom(ref.read(locationsProvider), c.district, null));
     });
 
     if (clients.isEmpty) {
@@ -719,11 +710,18 @@ class _AgentNewBookingScreenState extends ConsumerState<AgentNewBookingScreen> {
               onSelected: (v) => ref.read(_startTimeProvider.notifier).state = v,
             ),
             const SizedBox(height: 14),
-            LabeledField('Farm location',
-                hint: 'Nyagatare · Rwempasha',
-                icon: Icons.location_on_outlined,
-                controller: _location,
-                validator: (v) => Validators.required(v, 'Farm location')),
+            const Text('Farm location',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.body)),
+            const SizedBox(height: 10),
+            LocationFields(
+              value: _place,
+              onChanged: (v) => setState(() => _place = v),
+            ),
+            const SizedBox(height: 16),
+            LabeledField('Village or landmark (optional)',
+                hint: 'e.g. near the school',
+                icon: Icons.flag_outlined,
+                controller: _landmark),
             const SizedBox(height: 16),
             if (summary != null) summary,
             const SizedBox(height: 16),

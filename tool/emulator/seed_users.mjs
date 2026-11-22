@@ -21,7 +21,7 @@ for (const [role, name] of users) {
   await fetch(`${FS}/users/${localId}`, {
     method: 'PATCH',
     headers: { 'content-type': 'application/json', Authorization: 'Bearer owner' },
-    body: JSON.stringify({ fields: { name: s(name), email: s(email), phone: s('0788000000'), district: s('Kigali'), role: s(role), status: s('active'), createdAt: { timestampValue: new Date().toISOString() } } }),
+    body: JSON.stringify({ fields: { name: s(name), email: s(email), phone: s('0788000000'), district: s('Gasabo'), sector: s('Remera'), role: s(role), status: s('active'), createdAt: { timestampValue: new Date().toISOString() } } }),
   });
   console.log(`seeded ${email} (${role})`);
 }
