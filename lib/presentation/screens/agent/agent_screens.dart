@@ -3,11 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../domain/constants.dart';
 import '../../../domain/entities/entities.dart';
 import '../../../domain/usecases/pricing.dart';
 import '../../../domain/validators.dart';
+import '../../providers/locations_provider.dart';
 import '../../providers/providers.dart';
+import '../../widgets/location_fields.dart';
 import '../../widgets/ui.dart';
 import '../common/role_widgets.dart';
 import '../public/public_shell.dart';
@@ -15,7 +16,6 @@ import '../public/public_shell.dart';
 const agentNav = [
   NavItem('Home', Icons.grid_view_outlined),
   NavItem('Farmers', Icons.groups_2_outlined),
-  NavItem('New Booking', Icons.add),
   NavItem('Commission', Icons.payments_outlined),
   NavItem('Profile', Icons.person_outline),
 ];
@@ -96,14 +96,14 @@ class AgentDashboard extends ConsumerWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(22),
               child: SizedBox(
-                height: 140,
+                height: 112,
                 child: Row(
                   children: [
                     Expanded(
                       flex: 6,
                       child: Container(
                         color: AppColors.primaryDark,
-                        padding: const EdgeInsets.all(18),
+                        padding: const EdgeInsets.all(14),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -117,17 +117,17 @@ class AgentDashboard extends ConsumerWidget {
                               child: Text(rwf(_pendingCommission(bookings)),
                                   style: const TextStyle(
                                       color: Colors.white,
-                                      fontSize: 27,
+                                      fontSize: 24,
                                       fontWeight: FontWeight.w800)),
                             ),
                             const SizedBox(height: 4),
-                            const Text('Paid out to Mobile Money',
+                            const Text('Earned on completed bookings',
                                 style: TextStyle(color: Colors.white, fontSize: 13.5)),
                           ],
                         ),
                       ),
                     ),
-                    const Expanded(flex: 5, child: AssetPhoto('hero_villagers.jpg', height: 140)),
+                    const Expanded(flex: 5, child: AssetPhoto('hero_villagers.jpg', height: 112)),
                   ],
                 ),
               ),
@@ -145,19 +145,16 @@ class AgentDashboard extends ConsumerWidget {
             ]),
             const SizedBox(height: 16),
             PrimaryButton('+  Book for a Farmer',
-                height: 54, onPressed: () => context.go('/agent/new')),
+                height: 54, onPressed: () => context.push('/agent/new')),
             const SizedBox(height: 24),
             sectionTitle('Recent bookings',
                 action: 'Commission', onAction: () => context.go('/agent/commission')),
             const SizedBox(height: 12),
             if (bookings.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 24),
-                child: Center(
-                  child: Text('No bookings yet — book a machine for one of your farmers.',
-                      textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted)),
-                ),
-              ),
+              const EmptyState('No bookings yet',
+                  message: 'Book a machine for one of your farmers.',
+                  icon: Icons.event_note_outlined,
+                  padding: 16),
             for (final b in bookings.take(3)) ...[
               _BookingTile(booking: b),
               const SizedBox(height: 12),
@@ -253,21 +250,14 @@ class AgentFarmersScreen extends ConsumerWidget {
         children: [
           SearchField(
               hint: 'Search by name or phone',
-              filter: false,
               onChanged: (v) => ref.read(_clientQueryProvider.notifier).state = v),
           const SizedBox(height: 16),
           if (items.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 40),
-              child: Center(
-                child: Text(
-                    clients.isEmpty
-                        ? 'No farmers yet — register your first one below.'
-                        : 'No farmers match your search.',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: AppColors.muted)),
-              ),
-            ),
+            EmptyState(clients.isEmpty ? 'No farmers yet' : 'No farmers found',
+                message: clients.isEmpty
+                    ? 'Register your first farmer below.'
+                    : 'Try a different name or phone number.',
+                icon: Icons.groups_2_outlined),
           for (final c in items) ...[
             _clientCard(context, ref, c, bookings),
             const SizedBox(height: 12),
@@ -298,7 +288,7 @@ class AgentFarmersScreen extends ConsumerWidget {
       action: 'Book',
       onAction: () {
         ref.read(_selectedClientIdProvider.notifier).state = c.id;
-        context.go('/agent/new');
+        context.push('/agent/new');
       },
       tags: [
         _miniAction('Edit', Icons.edit_outlined, () => _openForm(context, existing: c)),
@@ -323,13 +313,12 @@ class _ClientDialogState extends ConsumerState<_ClientDialog> {
   late final TextEditingController _name = TextEditingController(text: widget.existing?.name ?? '');
   late final TextEditingController _phone =
       TextEditingController(text: widget.existing?.phone ?? '');
-  String? _district;
+  Place _place = emptyPlace;
 
   @override
   void initState() {
     super.initState();
-    final d = widget.existing?.district;
-    _district = districts.contains(d) ? d : null;
+    _place = placeFrom(ref.read(locationsProvider), widget.existing?.district, null);
   }
 
   @override
@@ -346,7 +335,7 @@ class _ClientDialogState extends ConsumerState<_ClientDialog> {
           existing: widget.existing,
           name: _name.text,
           phone: _phone.text,
-          district: _district ?? '',
+          district: _place.district ?? '',
         );
     if (!mounted) return;
     if (result.ok) {
@@ -384,20 +373,10 @@ class _ClientDialogState extends ConsumerState<_ClientDialog> {
                   validator: Validators.phone,
                   textInputAction: TextInputAction.next),
               const SizedBox(height: 14),
-              const Text('District',
-                  style:
-                      TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.body)),
-              const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
-                initialValue: _district,
-                isExpanded: true,
-                validator: Validators.district,
-                decoration: const InputDecoration(
-                  hintText: 'Select district',
-                  prefixIcon: Icon(Icons.location_on_outlined, color: AppColors.muted),
-                ),
-                items: [for (final d in districts) DropdownMenuItem(value: d, child: Text(d))],
-                onChanged: (v) => _district = v,
+              LocationFields(
+                value: _place,
+                showSector: false,
+                onChanged: (v) => setState(() => _place = v),
               ),
               if (error != null) ...[
                 const SizedBox(height: 12),
@@ -446,7 +425,8 @@ class AgentNewBookingScreen extends ConsumerStatefulWidget {
 
 class _AgentNewBookingScreenState extends ConsumerState<AgentNewBookingScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _location = TextEditingController();
+  final _landmark = TextEditingController();
+  Place _place = emptyPlace;
 
   @override
   void initState() {
@@ -454,12 +434,12 @@ class _AgentNewBookingScreenState extends ConsumerState<AgentNewBookingScreen> {
     // Arriving from the Farmers tab with a farmer already chosen.
     final clients = ref.read(agentClientsProvider).valueOrNull ?? const <AgentClient>[];
     final c = _findClient(clients, ref.read(_selectedClientIdProvider));
-    if (c != null) _location.text = c.district;
+    if (c != null) _place = placeFrom(ref.read(locationsProvider), c.district, null);
   }
 
   @override
   void dispose() {
-    _location.dispose();
+    _landmark.dispose();
     super.dispose();
   }
 
@@ -467,11 +447,21 @@ class _AgentNewBookingScreenState extends ConsumerState<AgentNewBookingScreen> {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final current = ref.read(_bookingDateProvider);
+    final machineId = ref.read(_selectedEquipmentIdProvider);
+    final machine = machineId == null ? null : ref.read(equipmentByIdProvider(machineId));
+    final lastDate = today.add(const Duration(days: 365));
+    bool free(DateTime d) => machine == null || !machine.isUnavailableOn(d);
+    // The picker requires a selectable initial day, so start at the first free one.
+    var initial = current.isBefore(today) ? today : current;
+    while (!free(initial) && initial.isBefore(lastDate)) {
+      initial = initial.add(const Duration(days: 1));
+    }
     final picked = await showDatePicker(
       context: context,
-      initialDate: current.isBefore(today) ? today : current,
+      initialDate: initial,
       firstDate: today,
-      lastDate: today.add(const Duration(days: 365)),
+      lastDate: lastDate,
+      selectableDayPredicate: (d) => free(d),
     );
     if (picked != null) ref.read(_bookingDateProvider.notifier).state = picked;
   }
@@ -484,7 +474,7 @@ class _AgentNewBookingScreenState extends ConsumerState<AgentNewBookingScreen> {
           date: ref.read(_bookingDateProvider),
           startTime: ref.read(_startTimeProvider),
           durationOption: duration,
-          location: _location.text,
+          location: formatPlace(_place, _landmark.text),
         );
     if (!mounted) return;
     if (!result.ok) {
@@ -495,7 +485,7 @@ class _AgentNewBookingScreenState extends ConsumerState<AgentNewBookingScreen> {
     ref.invalidate(_selectedClientIdProvider);
     ref.invalidate(_selectedEquipmentIdProvider);
     ref.invalidate(_durationIndexProvider);
-    _location.clear();
+    _landmark.clear();
     context.go('/agent');
   }
 
@@ -504,7 +494,7 @@ class _AgentNewBookingScreenState extends ConsumerState<AgentNewBookingScreen> {
     final clients = ref.watch(agentClientsProvider).valueOrNull ?? const <AgentClient>[];
     final available = [
       for (final e in ref.watch(equipmentProvider).valueOrNull ?? const <Equipment>[])
-        if (e.available) e,
+        if (e.bookable) e,
     ];
     final client = _findClient(clients, ref.watch(_selectedClientIdProvider));
     final equipmentId = ref.watch(_selectedEquipmentIdProvider);
@@ -519,12 +509,13 @@ class _AgentNewBookingScreenState extends ConsumerState<AgentNewBookingScreen> {
     // Pre-fill the location with the farmer's district whenever the farmer changes.
     ref.listen<String?>(_selectedClientIdProvider, (_, next) {
       final c = _findClient(ref.read(agentClientsProvider).valueOrNull ?? const [], next);
-      if (c != null) _location.text = c.district;
+      if (c != null)
+        setState(() => _place = placeFrom(ref.read(locationsProvider), c.district, null));
     });
 
     if (clients.isEmpty) {
       return Scaffold(
-        appBar: const TopBar('New Booking', back: false),
+        appBar: const TopBar('New Booking'),
         body: ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -608,7 +599,7 @@ class _AgentNewBookingScreenState extends ConsumerState<AgentNewBookingScreen> {
 
     final eq = equipment;
     return Scaffold(
-      appBar: const TopBar('New Booking', back: false),
+      appBar: const TopBar('New Booking'),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -636,10 +627,8 @@ class _AgentNewBookingScreenState extends ConsumerState<AgentNewBookingScreen> {
             const Text('2. Machine', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700)),
             const SizedBox(height: 10),
             if (available.isEmpty)
-              const AppCard(
-                child: Text('No machines are available right now.',
-                    style: TextStyle(color: AppColors.muted)),
-              )
+              const EmptyState('No machines available',
+                  message: 'Check back later.', icon: Icons.agriculture_outlined, padding: 16)
             else
               DropdownButtonFormField<String>(
                 key: ValueKey('eq-${eq?.id}'),
@@ -719,11 +708,16 @@ class _AgentNewBookingScreenState extends ConsumerState<AgentNewBookingScreen> {
               onSelected: (v) => ref.read(_startTimeProvider.notifier).state = v,
             ),
             const SizedBox(height: 14),
-            LabeledField('Farm location',
-                hint: 'Nyagatare · Rwempasha',
-                icon: Icons.location_on_outlined,
-                controller: _location,
-                validator: (v) => Validators.required(v, 'Farm location')),
+            const Text('Farm location',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.body)),
+            const SizedBox(height: 10),
+            LocationFields(
+              value: _place,
+              onChanged: (v) => setState(() => _place = v),
+            ),
+            const SizedBox(height: 16),
+            LabeledField('Village or landmark (optional)',
+                hint: 'e.g. near the school', icon: Icons.flag_outlined, controller: _landmark),
             const SizedBox(height: 16),
             if (summary != null) summary,
             const SizedBox(height: 16),
@@ -777,7 +771,6 @@ class AgentCommissionScreen extends ConsumerWidget {
             label: 'Commission earned',
             amount: rwf(earned),
             note: '5% of every completed booking',
-            button: 'Paid out via Mobile Money',
           ),
           const SizedBox(height: 16),
           Row(

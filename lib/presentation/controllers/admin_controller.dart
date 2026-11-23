@@ -31,16 +31,6 @@ class AdminController extends ActionNotifier {
   Future<ActionResult<void>> deleteUser(AppUser user) =>
       run(() => ref.read(adminRepositoryProvider).deleteUser(user.uid));
 
-  Future<ActionResult<void>> resolveDispute(String id, String resolution) => run(() async {
-        if (resolution.trim().isEmpty) {
-          throw const AppException('Write a short resolution note first.');
-        }
-        await ref.read(adminRepositoryProvider).resolveDispute(id, resolution.trim());
-      });
-
-  Future<ActionResult<void>> deleteDispute(String id) =>
-      run(() => ref.read(adminRepositoryProvider).deleteDispute(id));
-
   Future<ActionResult<void>> seedDemoData() =>
       run(() => ref.read(adminRepositoryProvider).seedDemoData());
 }

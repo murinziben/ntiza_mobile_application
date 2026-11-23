@@ -59,7 +59,12 @@ class FakeAuthRepository implements AuthRepository {
   Future<void> saveProfile(AppUser profile) async => saved.add(profile);
 
   @override
-  Future<void> updateProfile(String uid, {String? name, String? phone, String? district}) async =>
+  Future<void> updateProfile(String uid,
+          {String? name,
+          String? phone,
+          String? district,
+          String? sector,
+          String? photoUrl}) async =>
       calls.add('update:$uid:$name:$phone:$district');
 }
 
@@ -121,7 +126,6 @@ class FakeNotificationRepository implements NotificationRepository {
 }
 
 class FakeAdminRepository implements AdminRepository {
-  final disputes = <Dispute>[];
   final decisions = <String>[];
 
   @override
@@ -138,21 +142,6 @@ class FakeAdminRepository implements AdminRepository {
   Future<void> deleteUser(String uid) async {}
 
   @override
-  Stream<List<Dispute>> watchDisputes() => Stream.value(disputes);
-
-  @override
-  Stream<List<Dispute>> watchDisputesRaisedBy(String uid) => Stream.value(disputes);
-
-  @override
-  Future<void> createDispute(Dispute dispute) async => disputes.add(dispute);
-
-  @override
-  Future<void> resolveDispute(String id, String resolution) async {}
-
-  @override
-  Future<void> deleteDispute(String id) async {}
-
-  @override
   Future<void> seedDemoData() async {}
 }
 
@@ -160,7 +149,6 @@ class FakeCatalogRepository implements CatalogRepository {
   final added = <Equipment>[];
   final updated = <Equipment>[];
   final deleted = <String>[];
-  final experts = <Expert>[];
 
   @override
   Stream<List<Equipment>> watchEquipment() => Stream.value(added);
@@ -177,14 +165,10 @@ class FakeCatalogRepository implements CatalogRepository {
   @override
   Future<void> deleteEquipment(String id) async => deleted.add(id);
 
-  @override
-  Stream<List<Expert>> watchExperts() => Stream.value(experts);
+  final blocked = <String, List<String>>{};
 
   @override
-  Future<void> saveExpert(Expert expert) async => experts.add(expert);
-
-  @override
-  Stream<List<Course>> watchCourses() => Stream.value(const []);
+  Future<void> setBlockedDates(String id, List<String> dateKeys) async => blocked[id] = dateKeys;
 }
 
 class FakeAgentRepository implements AgentRepository {

@@ -193,7 +193,7 @@ void main() {
       expect(t.bookings.created, isEmpty);
     });
 
-    test('pay, update status, delete and report', () async {
+    test('pay, update status and delete', () async {
       final t = _setup();
       await t.container.read(profileProvider.future);
       final c = t.container.read(bookingControllerProvider.notifier);
@@ -201,9 +201,6 @@ void main() {
       expect((await c.updateStatus(sampleBooking(), BookingStatus.confirmed)).ok, isTrue);
       expect((await c.delete(sampleBooking())).ok, isFalse); // still pending
       expect((await c.delete(sampleBooking(status: BookingStatus.cancelled))).ok, isTrue);
-      expect((await c.reportProblem(sampleBooking(), 'short')).ok, isFalse);
-      expect(
-          (await c.reportProblem(sampleBooking(), 'The machine broke down mid-job.')).ok, isTrue);
     });
   });
 
@@ -261,13 +258,11 @@ void main() {
       expect(t.catalog.added, isEmpty);
     });
 
-    test('delete, status change and availability', () async {
+    test('delete and status change', () async {
       final t = _setup(me: sampleOwner);
       final c = t.container.read(catalogControllerProvider.notifier);
       expect((await c.deleteEquipment(sampleTractor)).ok, isTrue);
-      expect((await c.setEquipmentStatus(sampleTractor, EquipmentStatus.maintenance)).ok, isTrue);
-      const expert = Expert(id: 'ex1', name: 'Dr', field: 'f', category: 'c');
-      expect((await c.saveAvailability(expert)).ok, isTrue);
+      expect((await c.setMaintenance(sampleTractor, true)).ok, isTrue);
     });
 
     test('agent saves and deletes clients', () async {

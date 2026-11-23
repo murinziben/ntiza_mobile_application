@@ -4,10 +4,7 @@ import '../../domain/entities/agent_client.dart';
 import '../../domain/entities/app_notification.dart';
 import '../../domain/entities/app_user.dart';
 import '../../domain/entities/booking.dart';
-import '../../domain/entities/course.dart';
-import '../../domain/entities/dispute.dart';
 import '../../domain/entities/equipment.dart';
-import '../../domain/entities/expert.dart';
 import '../../domain/entities/role.dart';
 import '../../domain/repositories/booking_repository.dart';
 
@@ -35,6 +32,8 @@ AppUser userFromMap(String id, Map<String, dynamic> m) => AppUser(
       email: _s(m, 'email'),
       phone: _s(m, 'phone'),
       district: _s(m, 'district'),
+      sector: _s(m, 'sector'),
+      photoUrl: _s(m, 'photoUrl'),
       role: roleFromName(m['role'] as String?),
       status: _s(m, 'status', UserStatus.active),
       createdAt: _ts(m['createdAt']),
@@ -45,6 +44,8 @@ Map<String, dynamic> userToMap(AppUser u) => {
       'email': u.email,
       'phone': u.phone,
       'district': u.district,
+      'sector': u.sector,
+      'photoUrl': u.photoUrl,
       'role': u.role.name,
       'status': u.status,
       'createdAt': FieldValue.serverTimestamp(),
@@ -62,9 +63,14 @@ Equipment equipmentFromMap(String id, Map<String, dynamic> m) => Equipment(
       sector: _s(m, 'sector'),
       price: _i(m, 'price'),
       unit: _s(m, 'unit', 'hour'),
-      status: _s(m, 'status', EquipmentStatus.available),
+      // Older records stored a `status` string; only 'Maintenance' still counts.
+      inMaintenance:
+          m['inMaintenance'] is bool ? m['inMaintenance'] as bool : m['status'] == 'Maintenance',
       about: _s(m, 'about'),
+      photoUrl: _s(m, 'photoUrl'),
       jobs: _i(m, 'jobs'),
+      blockedDates: [for (final d in (m['blockedDates'] as List? ?? const [])) d.toString()],
+      bookedDates: [for (final d in (m['bookedDates'] as List? ?? const [])) d.toString()],
       specs: [
         for (final raw in (m['specs'] as List? ?? const []))
           if (raw is Map) Spec((raw['k'] ?? '').toString(), (raw['v'] ?? '').toString()),
@@ -82,8 +88,9 @@ Map<String, dynamic> equipmentToMap(Equipment e) => {
       'sector': e.sector,
       'price': e.price,
       'unit': e.unit,
-      'status': e.status,
+      'inMaintenance': e.inMaintenance,
       'about': e.about,
+      'photoUrl': e.photoUrl,
       'specs': [
         for (final s in e.specs) {'k': s.key, 'v': s.value}
       ],
@@ -93,55 +100,6 @@ Map<String, dynamic> equipmentCreateMap(Equipment e) => {
       ...equipmentToMap(e),
       'jobs': e.jobs,
       'createdAt': FieldValue.serverTimestamp(),
-    };
-
-// ---- experts ---------------------------------------------------------------
-
-Expert expertFromMap(String id, Map<String, dynamic> m) => Expert(
-      id: id,
-      name: _s(m, 'name'),
-      field: _s(m, 'field'),
-      category: _s(m, 'category'),
-      rating: (m['rating'] is num) ? (m['rating'] as num).toDouble() : 0,
-      years: _i(m, 'years'),
-      fee: _i(m, 'fee', 15000),
-      sessionMinutes: _i(m, 'sessionMinutes', 30),
-      accepting: m['accepting'] is bool ? m['accepting'] as bool : true,
-      schedule: {
-        if (m['schedule'] is Map)
-          for (final e in (m['schedule'] as Map).entries) e.key.toString(): e.value.toString(),
-      },
-    );
-
-Map<String, dynamic> expertToMap(Expert x) => {
-      'name': x.name,
-      'field': x.field,
-      'category': x.category,
-      'rating': x.rating,
-      'years': x.years,
-      'fee': x.fee,
-      'sessionMinutes': x.sessionMinutes,
-      'accepting': x.accepting,
-      'schedule': x.schedule,
-    };
-
-// ---- courses ---------------------------------------------------------------
-
-Course courseFromMap(String id, Map<String, dynamic> m) => Course(
-      id: id,
-      title: _s(m, 'title'),
-      level: _s(m, 'level', 'Beginner'),
-      topic: _s(m, 'topic'),
-      lessons: _i(m, 'lessons'),
-      image: _s(m, 'image'),
-    );
-
-Map<String, dynamic> courseToMap(Course c) => {
-      'title': c.title,
-      'level': c.level,
-      'topic': c.topic,
-      'lessons': c.lessons,
-      'image': c.image,
     };
 
 // ---- bookings --------------------------------------------------------------
@@ -166,6 +124,7 @@ Booking bookingFromMap(String id, Map<String, dynamic> m) => Booking(
       paidVia: m['paidVia'] as String?,
       agentId: _s(m, 'agentId'),
       clientName: _s(m, 'clientName'),
+      dateKey: _s(m, 'dateKey'),
       createdAt: _ts(m['createdAt']),
     );
 
@@ -175,6 +134,7 @@ Map<String, dynamic> newBookingToMap(NewBooking b) => {
       'image': b.image,
       'status': BookingStatus.pending,
       'dateLabel': b.dateLabel,
+      'dateKey': b.dateKey,
       'scheduled': b.scheduled,
       'detail': b.detail,
       'place': b.place,
@@ -208,29 +168,6 @@ Map<String, dynamic> notificationToMap(String userId, String title, String body,
       'body': body,
       'kind': kind,
       'unread': true,
-      'createdAt': FieldValue.serverTimestamp(),
-    };
-
-// ---- disputes --------------------------------------------------------------
-
-Dispute disputeFromMap(String id, Map<String, dynamic> m) => Dispute(
-      id: id,
-      bookingRef: _s(m, 'bookingRef'),
-      raisedBy: _s(m, 'raisedBy'),
-      raisedByName: _s(m, 'raisedByName'),
-      reason: _s(m, 'reason'),
-      status: _s(m, 'status', Dispute.open),
-      resolution: _s(m, 'resolution'),
-      createdAt: _ts(m['createdAt']),
-    );
-
-Map<String, dynamic> disputeToMap(Dispute d) => {
-      'bookingRef': d.bookingRef,
-      'raisedBy': d.raisedBy,
-      'raisedByName': d.raisedByName,
-      'reason': d.reason,
-      'status': d.status,
-      'resolution': d.resolution,
       'createdAt': FieldValue.serverTimestamp(),
     };
 

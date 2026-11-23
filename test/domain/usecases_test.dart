@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ntiza/core/errors/app_exception.dart';
+import 'package:ntiza/core/utils/formatters.dart';
 import 'package:ntiza/domain/entities/entities.dart';
 import 'package:ntiza/domain/usecases/agent_usecases.dart';
 import 'package:ntiza/domain/usecases/auth_usecases.dart';
@@ -126,13 +127,11 @@ void main() {
   group('BookingUseCases', () {
     late FakeBookingRepository bookings;
     late FakeNotificationRepository notifications;
-    late FakeAdminRepository admin;
     late BookingUseCases useCases;
     setUp(() {
       bookings = FakeBookingRepository();
       notifications = FakeNotificationRepository();
-      admin = FakeAdminRepository();
-      useCases = BookingUseCases(bookings, notifications, admin);
+      useCases = BookingUseCases(bookings, notifications);
     });
 
     test('scheduledLabel formats weekday, date and time', () {
@@ -160,7 +159,7 @@ void main() {
     });
 
     test('bookEquipment rejects machines under maintenance and blank locations', () {
-      final broken = sampleTractor.copyWith(status: EquipmentStatus.maintenance);
+      final broken = sampleTractor.copyWith(inMaintenance: true);
       expect(
         () => useCases.bookEquipment(
             equipment: broken,
@@ -193,6 +192,61 @@ void main() {
       expect(bookings.created, isEmpty);
     });
 
+    test('bookEquipment stores the day key and refuses a day that is already taken', () async {
+      await useCases.bookEquipment(
+          equipment: sampleTractor,
+          date: DateTime(2026, 11, 14),
+          startTime: '08:00',
+          durationOption: '2 hours',
+          location: 'Huye',
+          farmer: sampleFarmer);
+      expect(bookings.created.single.dateKey, '2026-11-14');
+
+      final taken = Equipment(
+        id: sampleTractor.id,
+        name: sampleTractor.name,
+        type: sampleTractor.type,
+        district: sampleTractor.district,
+        price: sampleTractor.price,
+        unit: sampleTractor.unit,
+        ownerId: sampleTractor.ownerId,
+        bookedDates: const ['2026-11-15'],
+      );
+      expect(
+        () => useCases.bookEquipment(
+            equipment: taken,
+            date: DateTime(2026, 11, 15),
+            startTime: '08:00',
+            durationOption: '2 hours',
+            location: 'Huye',
+            farmer: sampleFarmer),
+        throwsA(isA<AppException>()),
+      );
+      expect(bookings.created, hasLength(1));
+      // The next day is still free.
+      await useCases.bookEquipment(
+          equipment: taken,
+          date: DateTime(2026, 11, 16),
+          startTime: '08:00',
+          durationOption: '2 hours',
+          location: 'Huye',
+          farmer: sampleFarmer);
+      expect(bookings.created, hasLength(2));
+
+      // A day the owner blocked is refused too.
+      final blocked = taken.copyWith(blockedDates: const ['2026-11-20']);
+      expect(
+        () => useCases.bookEquipment(
+            equipment: blocked,
+            date: DateTime(2026, 11, 20),
+            startTime: '08:00',
+            durationOption: '2 hours',
+            location: 'Huye',
+            farmer: sampleFarmer),
+        throwsA(isA<AppException>()),
+      );
+    });
+
     test('an agent books for a client and the farmer id stays empty', () async {
       const agent =
           AppUser(uid: 'agent1', name: 'Agent A', role: Role.agent, status: UserStatus.active);
@@ -218,33 +272,6 @@ void main() {
       expect(notifications.added.single.$3, contains('Mukamana Aline'));
     });
 
-    test('bookExpert charges the expert fee and refuses experts who are not accepting', () async {
-      const expert =
-          Expert(id: 'ex1', name: 'Dr. Uwera', field: 'Crops', category: 'Crops', fee: 20000);
-      final ref = await useCases.bookExpert(
-        expert: expert,
-        farmer: sampleFarmer,
-        date: DateTime(2026, 11, 18),
-        time: '14:00',
-        mode: 'Phone call',
-        topic: 'Maize leaf yellowing',
-      );
-      expect(ref, 'NTZ-2041');
-      expect(bookings.created.single.total, 20000);
-      expect(bookings.created.single.kind, BookingKind.consult);
-      expect(notifications.added.single.$1, 'ex1');
-      expect(
-        () => useCases.bookExpert(
-            expert: expert.copyWith(accepting: false),
-            farmer: sampleFarmer,
-            date: DateTime(2026, 11, 18),
-            time: '14:00',
-            mode: 'Phone call',
-            topic: 'Maize'),
-        throwsA(isA<AppException>()),
-      );
-    });
-
     test('pay records the provider and notifies both sides', () async {
       await useCases.pay(sampleBooking(), 'MTN MoMo');
       expect(bookings.paid, ['NTZ-2041:MTN MoMo']);
@@ -262,15 +289,6 @@ void main() {
       expect(() => useCases.deleteBooking(sampleBooking()), throwsA(isA<AppException>()));
       await useCases.deleteBooking(sampleBooking(status: BookingStatus.completed));
       expect(bookings.deleted, ['NTZ-2041']);
-    });
-
-    test('reportProblem needs a real reason and creates a dispute', () async {
-      expect(() => useCases.reportProblem(sampleBooking(), sampleFarmer, 'bad'),
-          throwsA(isA<AppException>()));
-      await useCases.reportProblem(
-          sampleBooking(), sampleFarmer, 'The operator arrived two hours late.');
-      expect(admin.disputes.single.bookingRef, 'NTZ-2041');
-      expect(admin.disputes.single.isOpen, isTrue);
     });
   });
 
@@ -310,16 +328,26 @@ void main() {
       expect(catalog.deleted, ['eq1']);
     });
 
-    test('setEquipmentStatus and saveAvailability', () async {
-      await useCases.setEquipmentStatus(sampleTractor, EquipmentStatus.maintenance);
-      expect(catalog.updated.single.status, EquipmentStatus.maintenance);
-      const expert = Expert(id: 'ex1', name: 'Dr', field: 'Crops', category: 'Crops');
-      await useCases.saveAvailability(expert.copyWith(fee: 12000, sessionMinutes: 45));
-      expect(catalog.experts.single.fee, 12000);
-      expect(
-          () => useCases.saveAvailability(expert.copyWith(fee: 0)), throwsA(isA<AppException>()));
-      expect(() => useCases.saveAvailability(expert.copyWith(sessionMinutes: 0)),
+    test('setBlockedDays stores sorted keys and refuses booked days', () async {
+      await useCases.setBlockedDays(sampleTractor, [DateTime(2026, 12, 3), DateTime(2026, 12, 1)]);
+      expect(catalog.blocked['eq1'], ['2026-12-01', '2026-12-03']);
+      final booked = sampleTractor.copyWith(blockedDates: const []);
+      const withBooking = Equipment(
+          id: 'eq1',
+          name: 'T',
+          type: 'Tractor',
+          district: 'Huye',
+          price: 1,
+          unit: 'day',
+          bookedDates: ['2026-12-05']);
+      expect(booked.blockedDates, isEmpty);
+      expect(() => useCases.setBlockedDays(withBooking, [DateTime(2026, 12, 5)]),
           throwsA(isA<AppException>()));
+    });
+
+    test('setMaintenance', () async {
+      await useCases.setMaintenance(sampleTractor, true);
+      expect(catalog.updated.single.inMaintenance, isTrue);
     });
   });
 
@@ -352,12 +380,12 @@ void main() {
       expect(Role.owner.needsApproval, isTrue);
       expect(Role.farmer.needsApproval, isFalse);
       expect(Role.admin.label, 'Admin');
-      expect(roleFromName('expert'), Role.expert);
+      expect(roleFromName('expert'), Role.farmer);
       expect(roleFromName('unknown'), Role.farmer);
     });
 
     test('AppUser.firstName skips honorifics', () {
-      const u = AppUser(uid: '1', name: 'Dr. Uwera Solange', role: Role.expert, status: 'active');
+      const u = AppUser(uid: '1', name: 'Dr. Uwera Solange', role: Role.agent, status: 'active');
       expect(u.firstName, 'Uwera');
       expect(u.copyWith(status: UserStatus.suspended).isActive, isFalse);
     });
@@ -370,7 +398,26 @@ void main() {
       expect(sampleTractor.unitShort, 'hr');
       expect(sampleTractor.copyWith(unit: 'hectare').unitShort, 'ha');
       expect(sampleTractor.copyWith(unit: 'day').unitShort, 'day');
-      expect(sampleTractor.available, isTrue);
+      expect(sampleTractor.bookable, isTrue);
+      expect(sampleTractor.availability, Availability.freeToday);
+      expect(sampleTractor.availabilityLabel, 'Free today');
+      expect(sampleTractor.copyWith(inMaintenance: true).availabilityLabel, 'In maintenance');
+      final n = DateTime.now();
+      String key(int i) => dateKey(DateTime(n.year, n.month, n.day + i));
+      final busy = Equipment(
+          id: 'x',
+          name: 'x',
+          type: 'Tractor',
+          district: 'Huye',
+          price: 1,
+          unit: 'day',
+          bookedDates: [key(0), key(1)],
+          blockedDates: [key(2)]);
+      expect(busy.availability, Availability.freeLater);
+      expect(busy.availabilityLabel, startsWith('Free from'));
+      final full = busy.copyWith(blockedDates: [for (var i = 0; i < 60; i++) key(i)]);
+      expect(full.availabilityLabel, 'Fully booked');
+      expect(full.bookable, isFalse);
     });
 
     test('Booking helpers', () {
@@ -378,15 +425,6 @@ void main() {
       expect(b.earlier, isTrue);
       expect(b.isPaid, isFalse);
       expect(b.customerName, 'Uwase Esperance');
-      expect(b.expert, isFalse);
-      expect(sampleBooking(kind: BookingKind.consult).expert, isTrue);
-    });
-
-    test('Expert.fullSchedule covers every weekday', () {
-      const x = Expert(
-          id: 'e', name: 'n', field: 'f', category: 'c', schedule: {'Monday': '08:00 – 12:00'});
-      expect(x.fullSchedule.length, 7);
-      expect(x.fullSchedule['Tuesday'], '');
     });
   });
 }

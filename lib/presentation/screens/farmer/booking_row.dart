@@ -5,8 +5,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../domain/entities/entities.dart';
 import '../../widgets/ui.dart';
 
-/// Compact booking row used on the dashboard and bookings list. Works for both
-/// machine hires (photo) and expert consultations (icon).
+/// Compact booking row used on the dashboard and bookings list for machine
+/// hires.
 class BookingRow extends StatelessWidget {
   const BookingRow({super.key, required this.booking, required this.subtitle});
   final Booking booking;
@@ -20,11 +20,7 @@ class BookingRow extends StatelessWidget {
       onTap: () => context.push('/farmer/booking/${b.ref}'),
       child: Row(
         children: [
-          if (b.expert)
-            const IconTile(Icons.groups_2_outlined,
-                size: 60, radius: 12, bg: AppColors.purpleBg, fg: AppColors.purple)
-          else
-            AssetPhoto(b.image, width: 60, height: 60, radius: 12),
+          AssetPhoto(b.image, width: 60, height: 60, radius: 12),
           const SizedBox(width: 14),
           Expanded(
             child: Column(

@@ -7,7 +7,7 @@ import '../../../domain/entities/entities.dart';
 import '../../providers/providers.dart';
 import '../../widgets/ui.dart';
 
-const _filters = ['All', 'Bookings', 'Payments', 'Training'];
+const _filters = ['All', 'Bookings', 'Payments'];
 
 /// Selected filter chip.
 final _filterProvider = StateProvider.autoDispose<String>((ref) => 'All');
@@ -19,9 +19,8 @@ final _hiddenProvider = StateProvider.autoDispose<Set<String>>((ref) => const {}
 
 /// Whether [n] belongs to the chip called [filter].
 bool _matches(String filter, AppNotification n) => switch (filter) {
-      'Bookings' => n.kind == 'booking' || n.kind == 'expert' || n.kind == 'dispute',
+      'Bookings' => n.kind == 'booking',
       'Payments' => n.kind == 'payment',
-      'Training' => n.kind == 'training',
       _ => true,
     };
 
@@ -29,9 +28,7 @@ bool _matches(String filter, AppNotification n) => switch (filter) {
 (IconData, Color, Color) _styleFor(String kind) => switch (kind) {
       'booking' => (Icons.check_circle_outline, AppColors.green100, AppColors.primaryDark),
       'payment' => (Icons.payments_outlined, AppColors.blueBg, AppColors.blue),
-      'expert' => (Icons.groups_2_outlined, AppColors.purpleBg, AppColors.purple),
-      'training' => (Icons.menu_book_outlined, AppColors.amberBg, AppColors.amberText),
-      _ => (Icons.flag_outlined, AppColors.dangerBg, AppColors.danger),
+      _ => (Icons.notifications_none, AppColors.neutral, AppColors.body),
     };
 
 /// The user's notifications: tap to mark read, swipe left to delete.
@@ -74,12 +71,10 @@ class NotificationsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           if (items.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 60),
-              child: Center(
-                child: Text("You're all caught up.", style: TextStyle(color: AppColors.muted)),
-              ),
-            ),
+            const EmptyState("You're all caught up",
+                message: 'New notifications will show up here.',
+                icon: Icons.notifications_none_rounded,
+                padding: 60),
           for (final n in items)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -205,21 +200,7 @@ class _Message extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 48, color: AppColors.faint),
-              const SizedBox(height: 12),
-              Text(text,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 16, color: AppColors.muted)),
-              if (action != null) ...[
-                const SizedBox(height: 16),
-                PrimaryButton(action!, expand: false, onPressed: onAction),
-              ],
-            ],
-          ),
+          child: EmptyState(text, icon: icon, actionLabel: action, onAction: onAction),
         ),
       );
 }

@@ -19,6 +19,7 @@ class NewBooking {
     required this.providerName,
     this.agentId = '',
     this.clientName = '',
+    this.dateKey = '',
   });
 
   final String kind;
@@ -26,6 +27,7 @@ class NewBooking {
   final String image;
   final String itemId;
   final String dateLabel;
+  final String dateKey;
   final String scheduled;
   final String detail;
   final String place;
@@ -46,11 +48,14 @@ abstract class BookingRepository {
   Stream<List<Booking>> watchAll();
 
   /// Creates the booking as `Pending` and returns its reference (`NTZ-2041`).
+  /// For equipment it also reserves the day on the machine, and throws if
+  /// that day is already taken.
   Future<String> create(NewBooking booking);
 
   Future<void> markPaid(String ref, String via);
 
-  /// Updates the status. Completing a job also increments the equipment's counter.
+  /// Updates the status. Completing a job also increments the equipment's
+  /// counter; cancelling frees the machine's day again.
   Future<void> setStatus(Booking booking, String status);
 
   Future<void> delete(String ref);

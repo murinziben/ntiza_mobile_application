@@ -11,3 +11,10 @@ coverage/
 # Firebase admin key used only by tools/seed.js
 tools/serviceAccountKey.json
 tools/node_modules/
+
+# Firebase emulator logs
+*-debug.log
+
+# Local run settings (see env.example.json)
+env.json
+.wrangler/

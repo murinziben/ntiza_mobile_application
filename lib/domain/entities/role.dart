@@ -1,11 +1,10 @@
-/// The five kinds of account in NTIZA.
-enum Role { farmer, owner, expert, agent, admin }
+/// The four kinds of account in NTIZA.
+enum Role { farmer, owner, agent, admin }
 
 extension RoleX on Role {
   String get label => switch (this) {
         Role.farmer => 'Farmer',
         Role.owner => 'Equipment Owner',
-        Role.expert => 'Agricultural Expert',
         Role.agent => 'Booking Agent',
         Role.admin => 'Admin',
       };
@@ -14,7 +13,6 @@ extension RoleX on Role {
   String get home => switch (this) {
         Role.farmer => '/farmer',
         Role.owner => '/owner',
-        Role.expert => '/expert',
         Role.agent => '/agent',
         Role.admin => '/admin',
       };

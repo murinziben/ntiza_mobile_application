@@ -46,7 +46,10 @@ void main() {
         'ignored',
       ],
     });
-    expect(e.available, isFalse);
+    // The retired 'Booked' status reads as not in maintenance; dates decide bookings now.
+    expect(e.inMaintenance, isFalse);
+    expect(equipmentFromMap('e2', {'status': 'Maintenance'}).inMaintenance, isTrue);
+    expect(equipmentFromMap('e3', {'inMaintenance': true}).inMaintenance, isTrue);
     expect(e.specs.single.key, 'Power');
     expect(e.jobs, 3);
     final map = equipmentToMap(e);
@@ -56,35 +59,18 @@ void main() {
     expect(map.containsKey('jobs'), isFalse);
   });
 
-  test('expert mapping with schedule', () {
-    final x = expertFromMap('ex1', {
-      'name': 'Dr. Uwera',
-      'field': 'Crops',
-      'category': 'Crops',
-      'rating': 4.9,
-      'years': 12,
-      'fee': 20000,
-      'sessionMinutes': 45,
-      'accepting': false,
-      'schedule': {'Monday': '08:00 – 12:00'},
-    });
-    expect(x.rating, 4.9);
-    expect(x.accepting, isFalse);
-    expect(x.schedule['Monday'], '08:00 – 12:00');
-    expect(expertToMap(x)['fee'], 20000);
-    final d = expertFromMap('ex2', {});
-    expect(d.fee, 15000);
-    expect(d.accepting, isTrue);
-  });
-
-  test('course round trip', () {
-    final c = courseFromMap('c1', {'title': 'T', 'level': 'Beginner', 'topic': 'x', 'lessons': 5, 'image': 'a.jpg'});
-    expect(courseToMap(c)['lessons'], 5);
+  test('photo urls map and equipment falls back to the category image', () {
+    final withPhoto = equipmentFromMap('e', {'type': 'Pump', 'photoUrl': 'https://x/e.jpg'});
+    expect(withPhoto.image, 'https://x/e.jpg');
+    expect(equipmentToMap(withPhoto)['photoUrl'], 'https://x/e.jpg');
+    expect(equipmentFromMap('e', {'type': 'Pump'}).image, 'pump.jpg');
+    expect(userFromMap('u', {'photoUrl': 'https://x/a.jpg'}).photoUrl, 'https://x/a.jpg');
+    expect(userFromMap('u', {}).photoUrl, '');
   });
 
   test('booking mapping', () {
     final b = bookingFromMap('NTZ-2041', {
-      'kind': 'consult',
+      'kind': 'equipment',
       'title': 'Maize',
       'status': 'Confirmed',
       'total': 15000,
@@ -93,18 +79,16 @@ void main() {
       'paidVia': 'MTN MoMo',
       'createdAt': stamp,
     });
-    expect(b.expert, isTrue);
+    expect(b.kind, 'equipment');
     expect(b.isPaid, isTrue);
     expect(b.created, '02 Nov');
     expect(bookingFromMap('x', {}).createdAt, isNull);
   });
 
-  test('notification, dispute and client mappers', () {
-    final n = notificationFromMap('n1', {'userId': 'u', 'title': 'T', 'body': 'B', 'unread': false});
+  test('notification and client mappers', () {
+    final n =
+        notificationFromMap('n1', {'userId': 'u', 'title': 'T', 'body': 'B', 'unread': false});
     expect(n.unread, isFalse);
-    final d = disputeFromMap('d1', {'bookingRef': 'NTZ-1', 'reason': 'late', 'status': 'Resolved'});
-    expect(d.isOpen, isFalse);
-    expect(d.bookingRef, 'NTZ-1');
     final c = clientFromMap('c1', {'agentId': 'a', 'name': 'N', 'phone': '07', 'district': 'Huye'});
     expect(clientToMap(c)['agentId'], 'a');
   });

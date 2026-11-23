@@ -1,4 +1,7 @@
+import 'dart:ui' show PointerDeviceKind;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/router/app_router.dart';
@@ -16,16 +19,34 @@ class NtizaApp extends ConsumerWidget {
       title: 'NTIZA',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
+      scrollBehavior: const _DragScrollBehavior(),
       routerConfig: ref.watch(routerProvider),
       builder: (context, child) {
         final media = MediaQuery.of(context);
-        return MediaQuery(
-          data: media.copyWith(
-            textScaler: TextScaler.linear(media.textScaler.scale(1) * textScale),
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: appOverlayStyle,
+          child: MediaQuery(
+            data: media.copyWith(
+              textScaler: TextScaler.linear(media.textScaler.scale(1) * textScale),
+            ),
+            child: child ?? const SizedBox.shrink(),
           ),
-          child: child ?? const SizedBox.shrink(),
         );
       },
     );
   }
+}
+
+/// Lets a mouse or stylus drag-scroll lists too (Waydroid and desktop report
+/// the pointer as a mouse), so horizontal chip rows can always be swiped.
+class _DragScrollBehavior extends MaterialScrollBehavior {
+  const _DragScrollBehavior();
+
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+        ...super.dragDevices,
+        PointerDeviceKind.mouse,
+        PointerDeviceKind.stylus,
+        PointerDeviceKind.trackpad,
+      };
 }

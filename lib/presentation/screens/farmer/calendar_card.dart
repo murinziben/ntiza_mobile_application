@@ -40,6 +40,8 @@ class CalendarCard extends StatelessWidget {
     required this.onMonthChanged,
     required this.onSelected,
     this.isEnabled,
+    this.isMarked,
+    this.isBlocked,
   });
 
   final DateTime month;
@@ -47,8 +49,14 @@ class CalendarCard extends StatelessWidget {
   final ValueChanged<DateTime> onMonthChanged;
   final ValueChanged<DateTime> onSelected;
 
-  /// Extra rule for selectable days (e.g. an expert's working days).
+  /// Extra rule for selectable days (e.g. days the owner has blocked).
   final bool Function(DateTime day)? isEnabled;
+
+  /// Days to flag as already taken (shown in red, struck through, with a legend).
+  final bool Function(DateTime day)? isMarked;
+
+  /// Days the owner switched off (amber, with their own legend entry).
+  final bool Function(DateTime day)? isBlocked;
 
   @override
   Widget build(BuildContext context) {
@@ -102,20 +110,76 @@ class CalendarCard extends StatelessWidget {
                 for (var c = 0; c < 7; c++) Expanded(child: _dayCell(cells[r * 7 + c], today)),
               ],
             ),
+          if (isMarked != null || isBlocked != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 6, 8, 4),
+              child: Wrap(
+                spacing: 16,
+                runSpacing: 4,
+                children: [
+                  if (isMarked != null)
+                    _legend(Icons.block, AppColors.dangerBg, AppColors.danger, 'Already booked'),
+                  if (isBlocked != null)
+                    _legend(Icons.do_not_disturb_on_outlined, AppColors.amberBg,
+                        AppColors.amberText, 'Unavailable'),
+                ],
+              ),
+            ),
         ],
       ),
     );
   }
+
+  /// A day number with an optional diagonal (booked) or horizontal
+  /// (unavailable) line across it.
+  Widget _struck(String text,
+      {required double size,
+      required FontWeight weight,
+      required Color color,
+      bool diagonal = false,
+      bool horizontal = false}) {
+    final label = Text(text,
+        style: TextStyle(
+            fontSize: size,
+            fontWeight: weight,
+            color: color,
+            decoration: horizontal ? TextDecoration.lineThrough : null));
+    if (!diagonal) return label;
+    return CustomPaint(foregroundPainter: _DiagonalPainter(color), child: label);
+  }
+
+  /// Legend entry: an icon on a tile in the day colour, then its meaning.
+  Widget _legend(IconData icon, Color bg, Color fg, String text) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 26,
+            height: 22,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(7)),
+            child: Icon(icon, size: 16, color: fg),
+          ),
+          const SizedBox(width: 7),
+          Text(text, style: const TextStyle(fontSize: 12.5, color: AppColors.muted)),
+        ],
+      );
 
   Widget _dayCell(int? d, DateTime today) {
     if (d == null) return const SizedBox(height: 48);
     final date = DateTime(month.year, month.month, d);
     final on = !date.isBefore(today) && (isEnabled?.call(date) ?? true);
     final isSelected = date == selected;
+    final future = !date.isBefore(today);
+    final taken = future && (isMarked?.call(date) ?? false);
+    final blocked = !taken && future && (isBlocked?.call(date) ?? false);
     return Semantics(
       button: true,
       enabled: on,
-      label: dayMonth(date),
+      label: taken
+          ? '${dayMonth(date)}, already booked'
+          : blocked
+              ? '${dayMonth(date)}, unavailable'
+              : dayMonth(date),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: on ? () => onSelected(date) : null,
@@ -124,20 +188,54 @@ class CalendarCard extends StatelessWidget {
           margin: const EdgeInsets.all(2),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary : Colors.transparent,
+            color: isSelected
+                ? AppColors.primary
+                : taken
+                    ? AppColors.dangerBg
+                    : blocked
+                        ? AppColors.amberBg
+                        : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Text('$d',
-              style: TextStyle(
-                  fontSize: 15.5,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  color: isSelected
-                      ? Colors.white
-                      : on
-                          ? AppColors.ink
-                          : AppColors.faint)),
+          child: _struck(
+            '$d',
+            size: 15.5,
+            weight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            color: isSelected
+                ? Colors.white
+                : taken
+                    ? AppColors.danger
+                    : blocked
+                        ? AppColors.amberText
+                        : on
+                            ? AppColors.ink
+                            : AppColors.faint,
+            diagonal: taken && !isSelected,
+            horizontal: blocked && !isSelected,
+          ),
         ),
       ),
     );
   }
+}
+
+/// Draws a line from the bottom-left to the top-right corner of its child.
+class _DiagonalPainter extends CustomPainter {
+  const _DiagonalPainter(this.color);
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.drawLine(
+      Offset(-2, size.height + 1),
+      Offset(size.width + 2, -1),
+      Paint()
+        ..color = color
+        ..strokeWidth = 1.6
+        ..strokeCap = StrokeCap.round,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_DiagonalPainter old) => old.color != color;
 }

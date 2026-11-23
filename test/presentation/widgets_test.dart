@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ntiza/domain/entities/entities.dart';
+import 'package:ntiza/domain/locations.dart';
 import 'package:ntiza/presentation/providers/dependencies.dart';
+import 'package:ntiza/presentation/providers/locations_provider.dart';
 import 'package:ntiza/presentation/screens/auth/login_screen.dart';
 import 'package:ntiza/presentation/screens/common/settings_screen.dart';
+import 'package:ntiza/presentation/widgets/location_fields.dart';
 import 'package:ntiza/presentation/widgets/ui.dart';
 
 import '../helpers/fakes.dart';
@@ -16,11 +19,79 @@ Widget _app(Widget child, {FakeAuthRepository? auth, FakeSettingsRepository? set
       overrides: [
         authRepositoryProvider.overrideWithValue(auth ?? FakeAuthRepository()),
         settingsRepositoryProvider.overrideWithValue(settings ?? FakeSettingsRepository()),
+        locationsProvider.overrideWithValue(testLocations),
       ],
       child: MaterialApp(home: child),
     );
 
+final testLocations = RwandaLocations.fromJson([
+  {
+    'name': 'Southern Province',
+    'districts': [
+      {
+        'name': 'Huye',
+        'sectors': ['Ngoma', 'Tumba']
+      },
+    ],
+  },
+  {
+    'name': 'Kigali City',
+    'districts': [
+      {
+        'name': 'Gasabo',
+        'sectors': ['Remera']
+      },
+    ],
+  },
+]);
+
 void main() {
+  test('formatPlace joins landmark, sector and district and skips empty parts', () {
+    expect(formatPlace((district: 'Huye', sector: 'Tumba'), ' near school '),
+        'near school, Tumba, Huye');
+    expect(formatPlace((district: 'Huye', sector: null)), 'Huye');
+    expect(formatPlace(emptyPlace), '');
+  });
+
+  group('LocationFields', () {
+    testWidgets('province narrows districts, district narrows sectors, changes clear below',
+        (tester) async {
+      var place = (district: 'Huye', sector: 'Tumba') as Place;
+      await tester.pumpWidget(_app(StatefulBuilder(
+        builder: (context, setState) => Scaffold(
+          body: SingleChildScrollView(
+            child: LocationFields(value: place, onChanged: (v) => setState(() => place = v)),
+          ),
+        ),
+      )));
+
+      // Province is derived from the stored district.
+      expect(find.text('Southern Province'), findsOneWidget);
+
+      await tester.tap(find.text('Tumba'));
+      await tester.pumpAndSettle();
+      expect(find.text('Ngoma'), findsWidgets);
+      expect(find.text('Remera'), findsNothing);
+      await tester.tap(find.text('Ngoma').last);
+      await tester.pumpAndSettle();
+      expect(place.sector, 'Ngoma');
+
+      // Choosing another province clears district and sector.
+      await tester.tap(find.text('Southern Province'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Kigali City').last);
+      await tester.pumpAndSettle();
+      expect(place.district, isNull);
+      expect(place.sector, isNull);
+
+      // Only that province's districts are offered.
+      await tester.tap(find.text('Select district'));
+      await tester.pumpAndSettle();
+      expect(find.text('Gasabo'), findsWidgets);
+      expect(find.text('Huye'), findsNothing);
+    });
+  });
+
   group('LoginScreen', () {
     testWidgets('shows validation errors for empty fields and does not sign in', (tester) async {
       final auth = FakeAuthRepository();

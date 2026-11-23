@@ -43,6 +43,10 @@ String timeAgo(DateTime time, {DateTime? now}) {
 }
 
 /// `05 Nov` style label.
+/// `2026-11-25` — the day a machine is booked, used as a stable key.
+String dateKey(DateTime t) =>
+    '${t.year}-${t.month.toString().padLeft(2, '0')}-${t.day.toString().padLeft(2, '0')}';
+
 String dayMonth(DateTime t) => '${t.day.toString().padLeft(2, '0')} ${shortMonths[t.month - 1]}';
 
 /// Compact money for dashboards: `412K`, `1.20M`.

@@ -1,0 +1,14 @@
+name = "ntiza-app"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "ntiza-app"
+
+[vars]
+FIREBASE_PROJECT_ID = "ntiza-e9af2"
+# Public URL of the bucket (r2.dev subdomain or a custom domain), no trailing slash.
+PUBLIC_BASE_URL = "https://pub-887ccd6cc1744114ab086c286daee8c8.r2.dev"
+# Set to "true" ONLY for local `wrangler dev` against the Firebase Auth emulator.
+ALLOW_EMULATOR_TOKENS = "false"

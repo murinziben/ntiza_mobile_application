@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
@@ -26,6 +27,23 @@ ThemeData buildAppTheme() {
 
   return base.copyWith(
     scaffoldBackgroundColor: AppColors.page,
+    pageTransitionsTheme: const PageTransitionsTheme(builders: {
+      TargetPlatform.android: FadeSlideTransitionsBuilder(),
+      TargetPlatform.iOS: FadeSlideTransitionsBuilder(),
+      TargetPlatform.linux: FadeSlideTransitionsBuilder(),
+      TargetPlatform.macOS: FadeSlideTransitionsBuilder(),
+      TargetPlatform.windows: FadeSlideTransitionsBuilder(),
+    }),
+    bottomSheetTheme: const BottomSheetThemeData(
+      backgroundColor: AppColors.white,
+      surfaceTintColor: Colors.transparent,
+      showDragHandle: true,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+    ),
+    snackBarTheme: SnackBarThemeData(
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+    ),
     textTheme: _interTextTheme(base.textTheme),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
@@ -80,4 +98,42 @@ TextTheme _interTextTheme(TextTheme t) {
     labelMedium: inter(t.labelMedium),
     labelSmall: inter(t.labelSmall),
   );
+}
+
+/// Transparent status bar with dark icons so the page colour runs to the top
+/// of the screen; screens over photos override it with light icons.
+const appOverlayStyle = SystemUiOverlayStyle(
+  statusBarColor: Colors.transparent,
+  statusBarIconBrightness: Brightness.dark,
+  statusBarBrightness: Brightness.light,
+  systemStatusBarContrastEnforced: false,
+  systemNavigationBarColor: AppColors.page,
+  systemNavigationBarIconBrightness: Brightness.dark,
+  systemNavigationBarContrastEnforced: false,
+);
+
+/// Same status bar with white icons, for screens that start with a photo.
+final lightStatusBarStyle = appOverlayStyle.copyWith(
+  statusBarIconBrightness: Brightness.light,
+  statusBarBrightness: Brightness.dark,
+);
+
+/// Short fade plus a small upward slide. Skipped when the user turned
+/// animations off in system settings.
+class FadeSlideTransitionsBuilder extends PageTransitionsBuilder {
+  const FadeSlideTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(PageRoute<T> route, BuildContext context, Animation<double> animation,
+      Animation<double> secondaryAnimation, Widget child) {
+    if (MediaQuery.disableAnimationsOf(context)) return child;
+    final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+    return FadeTransition(
+      opacity: curved,
+      child: SlideTransition(
+        position: Tween(begin: const Offset(0, 0.04), end: Offset.zero).animate(curved),
+        child: child,
+      ),
+    );
+  }
 }

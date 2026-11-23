@@ -7,6 +7,7 @@ import '../../../domain/entities/entities.dart';
 import '../../widgets/ui.dart';
 import '../../providers/providers.dart';
 import '../public/public_shell.dart';
+import 'support.dart';
 
 /// Bottom-nav shell shared by every role.
 class RoleShell extends StatelessWidget {
@@ -15,14 +16,7 @@ class RoleShell extends StatelessWidget {
   final List<NavItem> items;
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        body: shell,
-        bottomNavigationBar: NtizaBottomNav(
-          items: items,
-          index: shell.currentIndex,
-          onTap: (i) => shell.goBranch(i, initialLocation: i == shell.currentIndex),
-        ),
-      );
+  Widget build(BuildContext context) => NavShell(shell: shell, items: items);
 }
 
 /// Greeting header used on role dashboards.
@@ -40,48 +34,40 @@ class RoleHeader extends ConsumerWidget {
     final title = this.title ?? 'Muraho, ${me?.firstName ?? ''} 👋';
     final subtitle = this.subtitle ?? '${me?.role.label ?? ''} · ${me?.district ?? ''}';
     return Row(
-        children: [
-          if (icon != null)
-            Container(
-              width: 54,
-              height: 54,
-              decoration: BoxDecoration(
-                  color: AppColors.ink, borderRadius: BorderRadius.circular(16)),
-              child: Icon(icon, color: Colors.white),
-            )
-          else
-            InitialsAvatar(initials, size: 54, bg: AppColors.primary, fg: Colors.white),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
-                Text(subtitle, style: const TextStyle(fontSize: 14, color: AppColors.muted)),
-              ],
-            ),
+      children: [
+        if (icon != null)
+          Container(
+            width: 54,
+            height: 54,
+            decoration:
+                BoxDecoration(color: AppColors.ink, borderRadius: BorderRadius.circular(16)),
+            child: Icon(icon, color: Colors.white),
+          )
+        else
+          InitialsAvatar(initials,
+              // Only the signed-in user's own header shows their photo.
+              photoUrl: this.initials == null ? (me?.photoUrl ?? '') : '',
+              size: 54,
+              bg: AppColors.primary,
+              fg: Colors.white),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+              Text(subtitle, style: const TextStyle(fontSize: 14, color: AppColors.muted)),
+            ],
           ),
-          // The bell opens the notification list (it shows an unread dot).
-          // `search` is kept for source compatibility and no longer changes it.
-          InkResponse(
-            onTap: () => context.push('/notifications'),
-            radius: 28,
-            child: Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.border),
-              ),
-              child: const Center(child: BellIcon()),
-            ),
-          ),
-        ],
-      );
+        ),
+        // The bell opens the notification list (it shows an unread dot).
+        // `search` is kept for source compatibility and no longer changes it.
+        const BellButton(),
+      ],
+    );
   }
 }
 
@@ -98,15 +84,28 @@ class StatGrid extends StatelessWidget {
   final List<StatSpec> stats;
 
   Widget _card(StatSpec s) => AppCard(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        padding: const EdgeInsets.all(12),
+        child: Row(
           children: [
-            IconTile(s.icon, bg: s.bg, fg: s.fg, size: 44, radius: 13),
-            const SizedBox(height: 14),
-            Text(s.value, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 2),
-            Text(s.label, style: const TextStyle(fontSize: 14.5, color: AppColors.muted)),
+            IconTile(s.icon, bg: s.bg, fg: s.fg, size: 40, radius: 12),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(s.value,
+                        style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800)),
+                  ),
+                  Text(s.label,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12.5, height: 1.2, color: AppColors.muted)),
+                ],
+              ),
+            ),
           ],
         ),
       );
@@ -115,13 +114,12 @@ class StatGrid extends StatelessWidget {
   Widget build(BuildContext context) => Column(
         children: [
           for (var i = 0; i < stats.length; i += 2) ...[
-            if (i > 0) const SizedBox(height: 14),
+            if (i > 0) const SizedBox(height: 10),
             Row(
               children: [
                 Expanded(child: _card(stats[i])),
-                const SizedBox(width: 14),
-                Expanded(
-                    child: i + 1 < stats.length ? _card(stats[i + 1]) : const SizedBox()),
+                const SizedBox(width: 10),
+                Expanded(child: i + 1 < stats.length ? _card(stats[i + 1]) : const SizedBox()),
               ],
             ),
           ],
@@ -180,9 +178,8 @@ class BarCard extends StatelessWidget {
                           Container(
                             height: height * values[i] / maxV,
                             decoration: BoxDecoration(
-                              color: i == values.length - 1
-                                  ? AppColors.primary
-                                  : AppColors.green100,
+                              color:
+                                  i == values.length - 1 ? AppColors.primary : AppColors.green100,
                               borderRadius: BorderRadius.circular(6),
                             ),
                           ),
@@ -202,24 +199,17 @@ class BarCard extends StatelessWidget {
   }
 }
 
-/// Green balance card with a white action button.
+/// Green balance card.
 class BalanceCard extends StatelessWidget {
-  const BalanceCard(
-      {super.key,
-      required this.label,
-      required this.amount,
-      required this.note,
-      required this.button,
-      this.onTap});
-  final String label, amount, note, button;
-  final VoidCallback? onTap;
+  const BalanceCard({super.key, required this.label, required this.amount, required this.note});
+  final String label, amount, note;
 
   @override
   Widget build(BuildContext context) => Container(
         width: double.infinity,
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-            color: AppColors.primaryDark, borderRadius: BorderRadius.circular(22)),
+        decoration:
+            BoxDecoration(color: AppColors.primaryDark, borderRadius: BorderRadius.circular(22)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -230,8 +220,6 @@ class BalanceCard extends StatelessWidget {
                     color: Colors.white, fontSize: 34, fontWeight: FontWeight.w800)),
             const SizedBox(height: 4),
             Text(note, style: const TextStyle(color: Colors.white, fontSize: 14)),
-            const SizedBox(height: 14),
-            OutlineButtonX(button, expand: false, height: 46, onPressed: onTap),
           ],
         ),
       );
@@ -287,11 +275,8 @@ class RequestCard extends StatelessWidget {
                           child: Text(l,
                               style: TextStyle(
                                   fontSize: 14,
-                                  fontWeight:
-                                      tag == l ? FontWeight.w600 : FontWeight.w400,
-                                  color: tag == l
-                                      ? AppColors.primaryDark
-                                      : AppColors.muted)),
+                                  fontWeight: tag == l ? FontWeight.w600 : FontWeight.w400,
+                                  color: tag == l ? AppColors.primaryDark : AppColors.muted)),
                         ),
                     ],
                   ),
@@ -313,9 +298,9 @@ class RequestCard extends StatelessWidget {
             const SizedBox(height: 14),
             Row(
               children: [
-                Expanded(child: OutlineButtonX(declineLabel, height: 46, onPressed: onDecline)),
+                Expanded(child: OutlineButtonX(declineLabel, compact: true, onPressed: onDecline)),
                 const SizedBox(width: 12),
-                Expanded(child: PrimaryButton(acceptLabel, height: 46, onPressed: onAccept)),
+                Expanded(child: PrimaryButton(acceptLabel, compact: true, onPressed: onAccept)),
               ],
             ),
           ],
@@ -443,36 +428,26 @@ class RowSpec {
   final Color bg, fg, amountColor;
 }
 
-/// Generic profile screen for non-farmer roles.
+/// Profile screen shared by every signed-in role.
 class RoleProfileScreen extends ConsumerWidget {
   const RoleProfileScreen({super.key});
-
-  void _showHelp(BuildContext context) => showDialog<void>(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text('Help & support'),
-          content: const Text(
-              'Need a hand? E-mail support@ntiza.app and the NTIZA team will reply within one working day.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close'),
-            ),
-          ],
-        ),
-      );
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final me = ref.watch(profileProvider).valueOrNull;
     final initials = initialsOf(me?.name ?? 'N');
     final name = me?.name ?? '';
-    final subtitle = '${me?.role.label ?? ''} · ${me?.district ?? ''}';
+    final subtitle = [
+      me?.role.label ?? '',
+      me?.district ?? '',
+      if (me?.role == Role.farmer && (me?.phone ?? '').isNotEmpty) me!.phone,
+    ].where((p) => p.isNotEmpty).join(' · ');
     final busy = ref.watch(authControllerProvider).busy;
     final rows = <(IconData, String, VoidCallback)>[
       (Icons.person_outline, 'Personal information', () => context.push('/profile/edit')),
+      (Icons.notifications_none, 'Notifications', () => context.push('/notifications')),
       (Icons.settings_outlined, 'Settings', () => context.push('/settings')),
-      (Icons.help_outline, 'Help & support', () => _showHelp(context)),
+      (Icons.help_outline, 'Help & support', () => showHelpDialog(context)),
     ];
     return Scaffold(
       appBar: const TopBar('Profile', back: false),
@@ -481,14 +456,15 @@ class RoleProfileScreen extends ConsumerWidget {
         children: [
           const SizedBox(height: 8),
           Center(
-              child: InitialsAvatar(initials, size: 84, bg: AppColors.primary, fg: Colors.white)),
+              child: InitialsAvatar(initials,
+                  photoUrl: me?.photoUrl ?? '', size: 84, bg: AppColors.primary, fg: Colors.white)),
           const SizedBox(height: 12),
           Center(
-              child: Text(name,
-                  style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800))),
+              child: Text(name, style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800))),
           const SizedBox(height: 4),
           Center(
               child: Text(subtitle,
+                  textAlign: TextAlign.center,
                   style: const TextStyle(fontSize: 14, color: AppColors.muted))),
           const SizedBox(height: 22),
           AppCard(
@@ -535,5 +511,4 @@ Widget sectionTitle(String t, {String? action, VoidCallback? onAction}) =>
     SectionHeader(t, action: action, onAction: onAction);
 
 /// Neutral tag chip ("Phone call", "Video call" …).
-Widget tagChip(String label) =>
-    Pill(label, big: true, bg: AppColors.neutral, fg: AppColors.body);
+Widget tagChip(String label) => Pill(label, big: true, bg: AppColors.neutral, fg: AppColors.body);

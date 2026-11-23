@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../core/errors/app_exception.dart';
 import '../../domain/entities/booking.dart';
 import '../../domain/repositories/booking_repository.dart';
 import '../mappers/firestore_mappers.dart';
@@ -38,8 +39,29 @@ class FirestoreBookingRepository implements BookingRepository {
   @override
   Future<String> create(NewBooking booking) => guardData(() {
         final counter = _db.collection('meta').doc('counters');
+        final reserve = booking.kind == BookingKind.equipment &&
+            booking.itemId.isNotEmpty &&
+            booking.dateKey.isNotEmpty;
+        final machine = reserve ? _db.collection('equipment').doc(booking.itemId) : null;
         return _db.runTransaction<String>((tx) async {
+          // All reads first: the day must still be free when we commit.
           final snap = await tx.get(counter);
+          if (machine != null) {
+            final data = (await tx.get(machine)).data();
+            final blocked = data?['blockedDates'];
+            if (blocked is List && blocked.contains(booking.dateKey)) {
+              throw const AppException(
+                  'The owner is not available on that date. Pick another day.');
+            }
+            final taken = data?['bookedDates'];
+            if (taken is List && taken.contains(booking.dateKey)) {
+              throw const AppException(
+                  'This machine is already booked on that date. Pick another day.');
+            }
+            tx.update(machine, {
+              'bookedDates': FieldValue.arrayUnion([booking.dateKey])
+            });
+          }
           final current = snap.data()?['booking'];
           final n = (current is num ? current.toInt() : 2040) + 1;
           tx.set(counter, {'booking': n}, SetOptions(merge: true));
@@ -56,6 +78,7 @@ class FirestoreBookingRepository implements BookingRepository {
   @override
   Future<void> setStatus(Booking booking, String status) => guardData(() async {
         await _bookings.doc(booking.ref).update({'status': status});
+        if (status == BookingStatus.cancelled) await _freeDay(booking);
         if (status == BookingStatus.completed &&
             booking.kind == BookingKind.equipment &&
             booking.itemId.isNotEmpty) {
@@ -67,5 +90,27 @@ class FirestoreBookingRepository implements BookingRepository {
       });
 
   @override
-  Future<void> delete(String ref) => guardData(() => _bookings.doc(ref).delete());
+  Future<void> delete(String ref) => guardData(() async {
+        final snap = await _bookings.doc(ref).get();
+        if (snap.exists) {
+          final booking = bookingFromMap(snap.id, snap.data()!);
+          if (booking.status == BookingStatus.pending ||
+              booking.status == BookingStatus.confirmed) {
+            await _freeDay(booking);
+          }
+        }
+        await _bookings.doc(ref).delete();
+      });
+
+  /// Makes the machine's day bookable again.
+  Future<void> _freeDay(Booking booking) async {
+    if (booking.kind != BookingKind.equipment ||
+        booking.itemId.isEmpty ||
+        booking.dateKey.isEmpty) {
+      return;
+    }
+    await _db.collection('equipment').doc(booking.itemId).update({
+      'bookedDates': FieldValue.arrayRemove([booking.dateKey]),
+    });
+  }
 }

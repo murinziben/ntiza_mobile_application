@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../domain/entities/entities.dart';
@@ -16,9 +17,7 @@ final _tabProvider = StateProvider.autoDispose<String>((ref) => 'Upcoming');
 class MyBookingsScreen extends ConsumerWidget {
   const MyBookingsScreen({super.key});
 
-  String _subtitle(Booking b) => b.expert
-      ? 'Consultation · ${b.dateLabel} · ${b.detail}'
-      : '${b.dateLabel} · ${b.detail} · ${rwf(b.total)}';
+  String _subtitle(Booking b) => '${b.dateLabel} · ${b.detail} · ${rwf(b.total)}';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -42,11 +41,19 @@ class MyBookingsScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (items.isEmpty)
-                    EmptyNote(tab == 'Upcoming'
-                        ? 'No upcoming bookings. Book a machine or an expert to get started.'
-                        : 'No past bookings yet.'),
-                  for (final b in items) ...[
-                    BookingRow(booking: b, subtitle: _subtitle(b)),
+                    tab == 'Upcoming'
+                        ? EmptyState('No upcoming bookings',
+                            message: 'Book a machine to get started.',
+                            icon: Icons.event_available_outlined,
+                            actionLabel: 'Book equipment',
+                            onAction: () => context.go('/farmer/book'))
+                        : const EmptyState('No past bookings yet',
+                            message: 'Completed and cancelled bookings show up here.',
+                            icon: Icons.history_rounded),
+                  for (var i = 0; i < items.length; i++) ...[
+                    FadeSlideIn(
+                        index: i,
+                        child: BookingRow(booking: items[i], subtitle: _subtitle(items[i]))),
                     const SizedBox(height: 12),
                   ],
                   if (items.isNotEmpty)

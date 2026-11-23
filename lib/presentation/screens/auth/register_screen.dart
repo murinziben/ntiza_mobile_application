@@ -2,26 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../domain/constants.dart';
 import '../../../domain/entities/entities.dart';
 import '../../../domain/validators.dart';
+import '../../providers/locations_provider.dart';
 import '../../providers/providers.dart';
+import '../../widgets/location_fields.dart';
 import '../../widgets/ui.dart';
 
 /// Role chosen on the sign-up screen.
 final _roleProvider = StateProvider.autoDispose<Role>((ref) => Role.farmer);
 
-/// District chosen on the sign-up screen; starts at the saved preference.
-final _districtProvider = StateProvider.autoDispose<String?>((ref) {
-  final saved = ref.read(settingsControllerProvider).preferredDistrict;
-  return districts.contains(saved) ? saved : null;
-});
+/// District and sector chosen on the sign-up screen; starts at the saved preference.
+final _placeProvider = StateProvider.autoDispose<Place>((ref) => placeFrom(
+    ref.read(locationsProvider), ref.read(settingsControllerProvider).preferredDistrict, null));
 
 /// The four roles a person can sign up as, with a one-line description.
 const registerRoles = <(Role, String, IconData)>[
-  (Role.farmer, 'Book equipment & experts, take training', Icons.eco_outlined),
+  (Role.farmer, 'Book machines for your farm', Icons.eco_outlined),
   (Role.owner, 'List machines and earn from bookings', Icons.agriculture_outlined),
-  (Role.expert, 'Offer paid consultations', Icons.groups_2_outlined),
   (Role.agent, 'Book on behalf of farmers, earn commission', Icons.smartphone_outlined),
 ];
 
@@ -59,7 +57,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           name: _name.text,
           email: _email.text,
           phone: _phone.text,
-          district: ref.read(_districtProvider) ?? '',
+          district: ref.read(_placeProvider).district ?? '',
+          sector: ref.read(_placeProvider).sector ?? '',
           password: _password.text,
           confirmPassword: _confirm.text,
         );
@@ -77,7 +76,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Widget build(BuildContext context) {
     final busy = ref.watch(authControllerProvider).busy;
     final role = ref.watch(_roleProvider);
-    final district = ref.watch(_districtProvider);
+    final place = ref.watch(_placeProvider);
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: const TopBar('Create Account'),
@@ -128,9 +127,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 textInputAction: TextInputAction.next,
                 validator: Validators.phone),
             const SizedBox(height: 16),
-            DistrictDropdown(
-              value: district,
-              onChanged: (v) => ref.read(_districtProvider.notifier).state = v,
+            LocationFields(
+              value: place,
+              onChanged: (v) => ref.read(_placeProvider.notifier).state = v,
             ),
             const SizedBox(height: 16),
             LabeledField('Password',
@@ -168,38 +167,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       ),
     );
   }
-}
-
-/// District picker shared by the sign-up and profile forms.
-class DistrictDropdown extends StatelessWidget {
-  const DistrictDropdown({super.key, required this.value, required this.onChanged});
-
-  final String? value;
-  final ValueChanged<String?> onChanged;
-
-  @override
-  Widget build(BuildContext context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('District',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.body)),
-          const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
-            initialValue: value,
-            isExpanded: true,
-            icon: const Icon(Icons.keyboard_arrow_down),
-            validator: Validators.district,
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            decoration: const InputDecoration(
-              hintText: 'Select district',
-              hintStyle: TextStyle(color: AppColors.faint),
-              prefixIcon: Icon(Icons.location_on_outlined, color: AppColors.muted),
-            ),
-            items: [for (final d in districts) DropdownMenuItem(value: d, child: Text(d))],
-            onChanged: onChanged,
-          ),
-        ],
-      );
 }
 
 /// Selectable card for one role (used on sign-up and "complete profile").

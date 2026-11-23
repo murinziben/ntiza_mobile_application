@@ -1,11 +1,11 @@
 import '../../core/errors/app_exception.dart';
+import '../../core/utils/formatters.dart';
 import '../entities/booking.dart';
 import '../entities/equipment.dart';
-import '../entities/expert.dart';
 import '../repositories/catalog_repository.dart';
 import '../validators.dart';
 
-/// Rules for listing, editing and removing equipment and expert profiles.
+/// Rules for listing, editing and removing equipment.
 class CatalogUseCases {
   CatalogUseCases(this._catalog);
 
@@ -35,14 +35,17 @@ class CatalogUseCases {
     await _catalog.deleteEquipment(equipment.id);
   }
 
-  Future<void> setEquipmentStatus(Equipment equipment, String status) =>
-      _catalog.updateEquipment(equipment.copyWith(status: status));
+  Future<void> setMaintenance(Equipment equipment, bool inMaintenance) =>
+      _catalog.updateEquipment(equipment.copyWith(inMaintenance: inMaintenance));
 
-  Future<void> saveAvailability(Expert expert) async {
-    if (expert.fee <= 0) throw const AppException('Enter a fee greater than zero.');
-    if (expert.sessionMinutes <= 0) {
-      throw const AppException('Enter a session length in minutes.');
+  /// Owner switches off [days] for this machine. Days that already carry a
+  /// pending or confirmed booking cannot be blocked.
+  Future<void> setBlockedDays(Equipment equipment, Iterable<DateTime> days) async {
+    final keys = {for (final d in days) dateKey(d)}.toList()..sort();
+    final clash = keys.where(equipment.bookedDates.contains);
+    if (clash.isNotEmpty) {
+      throw const AppException('A booking already exists on one of those days.');
     }
-    await _catalog.saveExpert(expert);
+    await _catalog.setBlockedDates(equipment.id, keys);
   }
 }

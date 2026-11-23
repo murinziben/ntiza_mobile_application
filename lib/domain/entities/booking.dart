@@ -13,10 +13,9 @@ class BookingStatus {
 class BookingKind {
   BookingKind._();
   static const equipment = 'equipment';
-  static const consult = 'consult';
 }
 
-/// A hire request for a machine or a consultation — `bookings/{ref}`.
+/// A hire request for a machine — `bookings/{ref}`.
 ///
 /// Title, image, place and the two names are a snapshot taken when the booking
 /// is made, so history stays correct if the equipment is later edited.
@@ -41,17 +40,21 @@ class Booking {
     this.paidVia,
     this.agentId = '',
     this.clientName = '',
+    this.dateKey = '',
     this.createdAt,
   });
 
   final String ref;
 
-  /// [BookingKind.equipment] or [BookingKind.consult].
+  /// Always [BookingKind.equipment].
   final String kind;
   final String title;
   final String image;
   final String status;
   final String dateLabel;
+
+  /// `yyyy-MM-dd` of the service day, used to block double booking.
+  final String dateKey;
   final String detail;
   final String place;
   final int total;
@@ -60,11 +63,11 @@ class Booking {
   final String farmerId;
   final String farmerName;
 
-  /// The equipment owner or expert who delivers the service.
+  /// The equipment owner who delivers the service.
   final String providerId;
   final String providerName;
 
-  /// Equipment or expert id this booking is for.
+  /// Equipment id this booking is for.
   final String itemId;
   final String scheduled;
   final String location;
@@ -75,8 +78,13 @@ class Booking {
   final String clientName;
   final DateTime? createdAt;
 
-  bool get expert => kind == BookingKind.consult;
   bool get isPaid => paidVia != null && paidVia!.isNotEmpty;
+
+  /// Money the provider has earned: the farmer paid (or the job is done) and
+  /// the booking was not cancelled.
+  bool get isEarned =>
+      status != BookingStatus.cancelled && (isPaid || status == BookingStatus.completed);
+
   bool get earlier => status == BookingStatus.completed || status == BookingStatus.cancelled;
 
   /// The name shown to the provider: the farmer, or the agent's client.

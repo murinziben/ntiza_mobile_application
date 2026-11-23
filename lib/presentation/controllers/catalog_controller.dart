@@ -2,12 +2,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/errors/app_exception.dart';
 import '../../domain/entities/equipment.dart';
-import '../../domain/entities/expert.dart';
+import '../../domain/repositories/image_storage.dart';
 import '../providers/data_providers.dart';
 import '../providers/dependencies.dart';
 import 'action_notifier.dart';
 
-/// Create / update / delete for equipment, plus expert availability.
+/// Create / update / delete for equipment.
 class CatalogController extends ActionNotifier {
   /// Saves a new machine for the signed-in owner (blank [existing]) or
   /// updates [existing]. [priceText] is the raw text of the price field.
@@ -20,10 +20,17 @@ class CatalogController extends ActionNotifier {
     required String district,
     required String sector,
     required String about,
+    ImageFile? newPhoto,
+    bool removePhoto = false,
   }) =>
       run(() async {
         final me = ref.read(profileProvider).valueOrNull;
         if (me == null) throw const AppException('Please log in again.');
+        final uploaded = newPhoto == null
+            ? null
+            : await ref.read(imageStorageProvider).upload(newPhoto, kind: 'equipment');
+        // Empty string clears the photo so the category image shows again.
+        final photoUrl = uploaded ?? (removePhoto ? '' : null);
         final price = int.tryParse(priceText.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
         final equipment = existing == null
             ? Equipment(
@@ -37,6 +44,7 @@ class CatalogController extends ActionNotifier {
                 price: price,
                 unit: unit,
                 about: about.trim(),
+                photoUrl: photoUrl ?? '',
               )
             : existing.copyWith(
                 name: name.trim(),
@@ -46,6 +54,7 @@ class CatalogController extends ActionNotifier {
                 price: price,
                 unit: unit,
                 about: about.trim(),
+                photoUrl: photoUrl,
               );
         await ref.read(catalogUseCasesProvider).saveEquipment(equipment, priceText: priceText);
       });
@@ -55,11 +64,11 @@ class CatalogController extends ActionNotifier {
         await ref.read(catalogUseCasesProvider).deleteEquipment(equipment, bookings);
       });
 
-  Future<ActionResult<void>> setEquipmentStatus(Equipment equipment, String status) =>
-      run(() => ref.read(catalogUseCasesProvider).setEquipmentStatus(equipment, status));
+  Future<ActionResult<void>> setMaintenance(Equipment equipment, bool inMaintenance) =>
+      run(() => ref.read(catalogUseCasesProvider).setMaintenance(equipment, inMaintenance));
 
-  Future<ActionResult<void>> saveAvailability(Expert expert) =>
-      run(() => ref.read(catalogUseCasesProvider).saveAvailability(expert));
+  Future<ActionResult<void>> setBlockedDays(Equipment equipment, Iterable<DateTime> days) =>
+      run(() => ref.read(catalogUseCasesProvider).setBlockedDays(equipment, days));
 }
 
 final catalogControllerProvider =

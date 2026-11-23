@@ -3,23 +3,19 @@ import '../../core/utils/formatters.dart';
 import '../entities/agent_client.dart';
 import '../entities/app_user.dart';
 import '../entities/booking.dart';
-import '../entities/dispute.dart';
 import '../entities/equipment.dart';
-import '../entities/expert.dart';
-import '../repositories/admin_repository.dart';
 import '../repositories/booking_repository.dart';
 import '../repositories/notification_repository.dart';
 import '../validators.dart';
 import 'pricing.dart';
 
-/// Booking, payment and dispute rules. Every state change also tells the
+/// Booking and payment rules. Every state change also tells the
 /// other party through a notification.
 class BookingUseCases {
-  BookingUseCases(this._bookings, this._notifications, this._admin);
+  BookingUseCases(this._bookings, this._notifications);
 
   final BookingRepository _bookings;
   final NotificationRepository _notifications;
-  final AdminRepository _admin;
 
   static const _weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -38,8 +34,14 @@ class BookingUseCases {
     AppUser? agent,
     AgentClient? client,
   }) async {
-    if (equipment.status == EquipmentStatus.maintenance) {
+    if (equipment.inMaintenance) {
       throw const AppException('This machine is under maintenance right now.');
+    }
+    if (equipment.isBlockedOn(date)) {
+      throw const AppException('The owner is not available on that date. Pick another day.');
+    }
+    if (equipment.isBookedOn(date)) {
+      throw const AppException('This machine is already booked on that date. Pick another day.');
     }
     final error = Validators.required(location, 'Farm location');
     if (error != null) throw AppException(error);
@@ -58,6 +60,7 @@ class BookingUseCases {
       image: equipment.image,
       itemId: equipment.id,
       dateLabel: dayMonth(date),
+      dateKey: dateKey(date),
       scheduled: scheduledLabel(date, startTime),
       detail: durationOption,
       place: equipment.district,
@@ -75,41 +78,6 @@ class BookingUseCases {
       await _notifications.add(equipment.ownerId, 'New booking request',
           '$who requested ${equipment.name} for ${dayMonth(date)}.', 'booking');
     }
-    return ref;
-  }
-
-  /// A farmer books a consultation with an expert.
-  Future<String> bookExpert({
-    required Expert expert,
-    required AppUser farmer,
-    required DateTime date,
-    required String time,
-    required String mode,
-    required String topic,
-  }) async {
-    if (!expert.accepting) {
-      throw const AppException('This expert is not taking new consultations.');
-    }
-    final error = Validators.required(topic, 'Topic');
-    if (error != null) throw AppException(error);
-    final ref = await _bookings.create(NewBooking(
-      kind: BookingKind.consult,
-      title: topic.trim(),
-      image: '',
-      itemId: expert.id,
-      dateLabel: dayMonth(date),
-      scheduled: scheduledLabel(date, time),
-      detail: mode,
-      place: expert.field,
-      location: mode,
-      total: expert.fee,
-      farmerId: farmer.uid,
-      farmerName: farmer.name,
-      providerId: expert.id,
-      providerName: expert.name,
-    ));
-    await _notifications.add(expert.id, 'New consultation request',
-        '${farmer.name} asked about "${topic.trim()}" for ${dayMonth(date)}.', 'expert');
     return ref;
   }
 
@@ -139,8 +107,7 @@ class BookingUseCases {
     };
     for (final uid in {booking.farmerId, booking.agentId}) {
       if (uid.isNotEmpty) {
-        await _notifications.add(
-            uid, 'Booking ${status.toLowerCase()}', text, booking.expert ? 'expert' : 'booking');
+        await _notifications.add(uid, 'Booking ${status.toLowerCase()}', text, 'booking');
       }
     }
   }
@@ -150,17 +117,5 @@ class BookingUseCases {
       throw const AppException('Only completed or cancelled bookings can be deleted.');
     }
     await _bookings.delete(booking.ref);
-  }
-
-  Future<void> reportProblem(Booking booking, AppUser user, String reason) async {
-    final error = Validators.reason(reason);
-    if (error != null) throw AppException(error);
-    await _admin.createDispute(Dispute(
-      id: '',
-      bookingRef: booking.ref,
-      raisedBy: user.uid,
-      raisedByName: user.name,
-      reason: reason.trim(),
-    ));
   }
 }

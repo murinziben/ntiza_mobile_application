@@ -39,6 +39,8 @@ class AppUser {
     this.phone = '',
     this.email = '',
     this.district = '',
+    this.sector = '',
+    this.photoUrl = '',
     this.createdAt,
   });
 
@@ -47,6 +49,10 @@ class AppUser {
   final String phone;
   final String email;
   final String district;
+  final String sector;
+
+  /// Profile picture (R2 URL). Empty means show initials.
+  final String photoUrl;
   final String status;
   final Role role;
   final DateTime? createdAt;
@@ -63,6 +69,8 @@ class AppUser {
     String? name,
     String? phone,
     String? district,
+    String? sector,
+    String? photoUrl,
     String? status,
     Role? role,
   }) =>
@@ -72,6 +80,8 @@ class AppUser {
         phone: phone ?? this.phone,
         email: email,
         district: district ?? this.district,
+        sector: sector ?? this.sector,
+        photoUrl: photoUrl ?? this.photoUrl,
         status: status ?? this.status,
         role: role ?? this.role,
         createdAt: createdAt,

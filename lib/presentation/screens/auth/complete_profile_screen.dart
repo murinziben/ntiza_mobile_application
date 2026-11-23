@@ -2,19 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../domain/constants.dart';
 import '../../../domain/entities/entities.dart';
 import '../../../domain/validators.dart';
+import '../../providers/locations_provider.dart';
 import '../../providers/providers.dart';
+import '../../widgets/location_fields.dart';
 import '../../widgets/ui.dart';
 import 'register_screen.dart';
 
 final _roleProvider = StateProvider.autoDispose<Role>((ref) => Role.farmer);
 
-final _districtProvider = StateProvider.autoDispose<String?>((ref) {
-  final saved = ref.read(settingsControllerProvider).preferredDistrict;
-  return districts.contains(saved) ? saved : null;
-});
+final _placeProvider = StateProvider.autoDispose<Place>((ref) => placeFrom(
+    ref.read(locationsProvider), ref.read(settingsControllerProvider).preferredDistrict, null));
 
 /// Last step of a Google sign-up: Google gives us an identity but no profile,
 /// so the person picks a role and enters name, phone and district.
@@ -43,7 +42,8 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
           role: ref.read(_roleProvider),
           name: _name.text,
           phone: _phone.text,
-          district: ref.read(_districtProvider) ?? '',
+          district: ref.read(_placeProvider).district ?? '',
+          sector: ref.read(_placeProvider).sector ?? '',
         );
     if (mounted && !result.ok) showToast(context, result.error!);
   }
@@ -52,7 +52,7 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
   Widget build(BuildContext context) {
     final busy = ref.watch(authControllerProvider).busy;
     final role = ref.watch(_roleProvider);
-    final district = ref.watch(_districtProvider);
+    final place = ref.watch(_placeProvider);
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: const TopBar('Complete Profile', back: false),
@@ -92,9 +92,9 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
                 textInputAction: TextInputAction.done,
                 validator: Validators.phone),
             const SizedBox(height: 16),
-            DistrictDropdown(
-              value: district,
-              onChanged: (v) => ref.read(_districtProvider.notifier).state = v,
+            LocationFields(
+              value: place,
+              onChanged: (v) => ref.read(_placeProvider.notifier).state = v,
             ),
             if (role.needsApproval) ...[
               const SizedBox(height: 14),
