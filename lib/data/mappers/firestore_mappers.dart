@@ -36,6 +36,7 @@ AppUser userFromMap(String id, Map<String, dynamic> m) => AppUser(
       phone: _s(m, 'phone'),
       district: _s(m, 'district'),
       sector: _s(m, 'sector'),
+      photoUrl: _s(m, 'photoUrl'),
       role: roleFromName(m['role'] as String?),
       status: _s(m, 'status', UserStatus.active),
       createdAt: _ts(m['createdAt']),
@@ -47,6 +48,7 @@ Map<String, dynamic> userToMap(AppUser u) => {
       'phone': u.phone,
       'district': u.district,
       'sector': u.sector,
+      'photoUrl': u.photoUrl,
       'role': u.role.name,
       'status': u.status,
       'createdAt': FieldValue.serverTimestamp(),
@@ -65,10 +67,10 @@ Equipment equipmentFromMap(String id, Map<String, dynamic> m) => Equipment(
       price: _i(m, 'price'),
       unit: _s(m, 'unit', 'hour'),
       // Older records stored a `status` string; only 'Maintenance' still counts.
-      inMaintenance: m['inMaintenance'] is bool
-          ? m['inMaintenance'] as bool
-          : m['status'] == 'Maintenance',
+      inMaintenance:
+          m['inMaintenance'] is bool ? m['inMaintenance'] as bool : m['status'] == 'Maintenance',
       about: _s(m, 'about'),
+      photoUrl: _s(m, 'photoUrl'),
       jobs: _i(m, 'jobs'),
       blockedDates: [for (final d in (m['blockedDates'] as List? ?? const [])) d.toString()],
       bookedDates: [for (final d in (m['bookedDates'] as List? ?? const [])) d.toString()],
@@ -91,6 +93,7 @@ Map<String, dynamic> equipmentToMap(Equipment e) => {
       'unit': e.unit,
       'inMaintenance': e.inMaintenance,
       'about': e.about,
+      'photoUrl': e.photoUrl,
       'specs': [
         for (final s in e.specs) {'k': s.key, 'v': s.value}
       ],

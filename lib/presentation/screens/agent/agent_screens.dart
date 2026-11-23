@@ -254,8 +254,7 @@ class AgentFarmersScreen extends ConsumerWidget {
               onChanged: (v) => ref.read(_clientQueryProvider.notifier).state = v),
           const SizedBox(height: 16),
           if (items.isEmpty)
-            EmptyState(
-                clients.isEmpty ? 'No farmers yet' : 'No farmers found',
+            EmptyState(clients.isEmpty ? 'No farmers yet' : 'No farmers found',
                 message: clients.isEmpty
                     ? 'Register your first farmer below.'
                     : 'Try a different name or phone number.',
@@ -511,7 +510,8 @@ class _AgentNewBookingScreenState extends ConsumerState<AgentNewBookingScreen> {
     // Pre-fill the location with the farmer's district whenever the farmer changes.
     ref.listen<String?>(_selectedClientIdProvider, (_, next) {
       final c = _findClient(ref.read(agentClientsProvider).valueOrNull ?? const [], next);
-      if (c != null) setState(() => _place = placeFrom(ref.read(locationsProvider), c.district, null));
+      if (c != null)
+        setState(() => _place = placeFrom(ref.read(locationsProvider), c.district, null));
     });
 
     if (clients.isEmpty) {
@@ -718,9 +718,7 @@ class _AgentNewBookingScreenState extends ConsumerState<AgentNewBookingScreen> {
             ),
             const SizedBox(height: 16),
             LabeledField('Village or landmark (optional)',
-                hint: 'e.g. near the school',
-                icon: Icons.flag_outlined,
-                controller: _landmark),
+                hint: 'e.g. near the school', icon: Icons.flag_outlined, controller: _landmark),
             const SizedBox(height: 16),
             if (summary != null) summary,
             const SizedBox(height: 16),

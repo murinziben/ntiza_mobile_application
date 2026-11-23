@@ -9,10 +9,12 @@ import '../../data/repositories/firestore_booking_repository.dart';
 import '../../data/repositories/firestore_catalog_repository.dart';
 import '../../data/repositories/firestore_notification_repository.dart';
 import '../../data/repositories/prefs_settings_repository.dart';
+import '../../data/repositories/r2_image_storage.dart';
 import '../../domain/repositories/admin_repository.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/repositories/booking_repository.dart';
 import '../../domain/repositories/catalog_repository.dart';
+import '../../domain/repositories/image_storage.dart';
 import '../../domain/repositories/notification_repository.dart';
 import '../../domain/repositories/settings_repository.dart';
 import '../../domain/usecases/agent_usecases.dart';
@@ -31,6 +33,8 @@ final sharedPreferencesProvider = Provider<SharedPreferences>(
   (ref) => throw UnimplementedError('sharedPreferencesProvider must be overridden'),
 );
 
+final imageStorageProvider =
+    Provider<ImageStorage>((ref) => R2ImageStorage(ref.watch(firebaseAuthProvider)));
 final authRepositoryProvider = Provider<AuthRepository>(
   (ref) => FirebaseAuthRepository(ref.watch(firebaseAuthProvider), ref.watch(firestoreProvider)),
 );

@@ -27,5 +27,6 @@ abstract class AuthRepository {
   /// Creates or replaces the profile document.
   Future<void> saveProfile(AppUser profile);
 
-  Future<void> updateProfile(String uid, {String? name, String? phone, String? district, String? sector});
+  Future<void> updateProfile(String uid,
+      {String? name, String? phone, String? district, String? sector, String? photoUrl});
 }

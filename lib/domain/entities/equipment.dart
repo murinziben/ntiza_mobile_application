@@ -37,6 +37,7 @@ class Equipment {
     this.ownerName = '',
     this.inMaintenance = false,
     this.about = '',
+    this.photoUrl = '',
     this.jobs = 0,
     this.specs = const [],
     this.bookedDates = const [],
@@ -54,9 +55,13 @@ class Equipment {
   final String unit;
   final String ownerId;
   final String ownerName;
+
   /// The one thing the owner sets by hand: out of service, blocks every date.
   final bool inMaintenance;
   final String about;
+
+  /// Owner-uploaded photo (R2 URL). Empty means use the category image.
+  final String photoUrl;
 
   /// Completed jobs — a counter maintained when a booking is completed.
   final int jobs;
@@ -100,8 +105,10 @@ class Equipment {
     return d;
   }
 
-  String get image => imageForType(type);
+  /// The uploaded photo when there is one, otherwise the category image.
+  String get image => photoUrl.isNotEmpty ? photoUrl : imageForType(type);
   String get place => sector.isEmpty ? district : '$district · $sector';
+
   /// How many days ahead we look for a free day before calling it fully booked.
   static const horizonDays = 60;
 
@@ -154,6 +161,7 @@ class Equipment {
     String? unit,
     bool? inMaintenance,
     String? about,
+    String? photoUrl,
     String? ownerName,
     String? id,
     List<String>? blockedDates,
@@ -170,6 +178,7 @@ class Equipment {
         ownerName: ownerName ?? this.ownerName,
         inMaintenance: inMaintenance ?? this.inMaintenance,
         about: about ?? this.about,
+        photoUrl: photoUrl ?? this.photoUrl,
         jobs: jobs,
         specs: specs,
         bookedDates: bookedDates,

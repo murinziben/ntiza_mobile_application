@@ -60,7 +60,11 @@ class FakeAuthRepository implements AuthRepository {
 
   @override
   Future<void> updateProfile(String uid,
-          {String? name, String? phone, String? district, String? sector}) async =>
+          {String? name,
+          String? phone,
+          String? district,
+          String? sector,
+          String? photoUrl}) async =>
       calls.add('update:$uid:$name:$phone:$district');
 }
 

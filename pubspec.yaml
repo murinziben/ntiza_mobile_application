@@ -17,6 +17,8 @@ dependencies:
   google_fonts: ">=6.0.0"
   shared_preferences: ^2.3.0
   flutter_svg: ^2.5.0
+  http: ^1.2.0
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/errors/app_exception.dart';
 import '../../domain/entities/equipment.dart';
 import '../../domain/entities/expert.dart';
+import '../../domain/repositories/image_storage.dart';
 import '../providers/data_providers.dart';
 import '../providers/dependencies.dart';
 import 'action_notifier.dart';
@@ -20,10 +21,17 @@ class CatalogController extends ActionNotifier {
     required String district,
     required String sector,
     required String about,
+    ImageFile? newPhoto,
+    bool removePhoto = false,
   }) =>
       run(() async {
         final me = ref.read(profileProvider).valueOrNull;
         if (me == null) throw const AppException('Please log in again.');
+        final uploaded = newPhoto == null
+            ? null
+            : await ref.read(imageStorageProvider).upload(newPhoto, kind: 'equipment');
+        // Empty string clears the photo so the category image shows again.
+        final photoUrl = uploaded ?? (removePhoto ? '' : null);
         final price = int.tryParse(priceText.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
         final equipment = existing == null
             ? Equipment(
@@ -37,6 +45,7 @@ class CatalogController extends ActionNotifier {
                 price: price,
                 unit: unit,
                 about: about.trim(),
+                photoUrl: photoUrl ?? '',
               )
             : existing.copyWith(
                 name: name.trim(),
@@ -46,6 +55,7 @@ class CatalogController extends ActionNotifier {
                 price: price,
                 unit: unit,
                 about: about.trim(),
+                photoUrl: photoUrl,
               );
         await ref.read(catalogUseCasesProvider).saveEquipment(equipment, priceText: priceText);
       });

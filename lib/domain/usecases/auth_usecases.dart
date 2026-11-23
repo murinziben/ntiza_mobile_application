@@ -91,7 +91,8 @@ class AuthUseCases {
       {required String name,
       required String phone,
       required String district,
-      String sector = ''}) async {
+      String sector = '',
+      String? photoUrl}) async {
     final error =
         Validators.fullName(name) ?? Validators.phone(phone) ?? Validators.district(district);
     if (error != null) throw AppException(error);
@@ -99,7 +100,8 @@ class AuthUseCases {
         name: name.trim(),
         phone: normalizePhone(phone),
         district: district,
-        sector: sector);
+        sector: sector,
+        photoUrl: photoUrl);
   }
 
   /// Partner roles start `pending`, everyone else `active`.

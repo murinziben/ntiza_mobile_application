@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../domain/repositories/image_storage.dart';
 import '../../../domain/validators.dart';
 import '../../providers/locations_provider.dart';
 import '../../providers/providers.dart';
+import '../../widgets/image_picking.dart';
 import '../../widgets/location_fields.dart';
 import '../../widgets/ui.dart';
 
@@ -25,6 +27,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _name;
   late final TextEditingController _phone;
+  ImageFile? _photo;
+
+  Future<void> _choosePhoto() async {
+    final picked = await pickImage(context);
+    if (picked != null && mounted) setState(() => _photo = picked);
+  }
 
   @override
   void initState() {
@@ -45,12 +53,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     final me = ref.read(profileProvider).valueOrNull;
-    final place = ref.read(_placeProvider) ?? placeFrom(ref.read(locationsProvider), me?.district, me?.sector);
+    final place = ref.read(_placeProvider) ??
+        placeFrom(ref.read(locationsProvider), me?.district, me?.sector);
     final result = await ref.read(authControllerProvider.notifier).updateProfile(
           name: _name.text,
           phone: _phone.text,
           district: place.district ?? '',
           sector: place.sector ?? '',
+          newPhoto: _photo,
         );
     if (!mounted) return;
     if (result.ok) {
@@ -65,7 +75,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   Widget build(BuildContext context) {
     final me = ref.watch(profileProvider).valueOrNull;
     final busy = ref.watch(authControllerProvider).busy;
-    final place = ref.watch(_placeProvider) ?? placeFrom(ref.read(locationsProvider), me?.district, me?.sector);
+    final place = ref.watch(_placeProvider) ??
+        placeFrom(ref.read(locationsProvider), me?.district, me?.sector);
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: const TopBar('Personal Information'),
@@ -75,8 +86,36 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 28),
           children: [
             Center(
-              child: InitialsAvatar(initialsOf(me?.name ?? 'N'),
-                  size: 84, bg: AppColors.primary, fg: Colors.white),
+              child: GestureDetector(
+                onTap: busy ? null : _choosePhoto,
+                child: Stack(
+                  children: [
+                    _photo != null
+                        ? ClipOval(
+                            child: Image.memory(_photo!.bytes,
+                                width: 84, height: 84, fit: BoxFit.cover))
+                        : InitialsAvatar(initialsOf(me?.name ?? 'N'),
+                            photoUrl: me?.photoUrl ?? '',
+                            size: 84,
+                            bg: AppColors.primary,
+                            fg: Colors.white),
+                    const Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: CircleAvatar(
+                        radius: 14,
+                        backgroundColor: AppColors.ink,
+                        child: Icon(Icons.photo_camera, size: 15, color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Center(
+              child: Text('Tap to change photo',
+                  style: TextStyle(fontSize: 13, color: AppColors.muted)),
             ),
             const SizedBox(height: 22),
             LabeledField('Full name',

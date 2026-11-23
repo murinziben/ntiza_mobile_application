@@ -42,7 +42,7 @@ class FarmerProfileScreen extends ConsumerWidget {
           const SizedBox(height: 8),
           Center(
               child: InitialsAvatar(initialsOf(me?.name ?? 'N'),
-                  size: 84, bg: AppColors.primary, fg: Colors.white)),
+                  photoUrl: me?.photoUrl ?? '', size: 84, bg: AppColors.primary, fg: Colors.white)),
           const SizedBox(height: 12),
           Center(
             child: Text(me?.name ?? '',

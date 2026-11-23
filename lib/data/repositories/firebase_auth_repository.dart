@@ -79,11 +79,13 @@ class FirebaseAuthRepository implements AuthRepository {
       guardData(() => _userDoc(profile.uid).set(userToMap(profile)));
 
   @override
-  Future<void> updateProfile(String uid, {String? name, String? phone, String? district, String? sector}) =>
+  Future<void> updateProfile(String uid,
+          {String? name, String? phone, String? district, String? sector, String? photoUrl}) =>
       guardData(() => _userDoc(uid).update({
             if (name != null) 'name': name,
             if (phone != null) 'phone': phone,
             if (district != null) 'district': district,
             if (sector != null) 'sector': sector,
+            if (photoUrl != null) 'photoUrl': photoUrl,
           }));
 }

@@ -14,6 +14,7 @@ const _starts = ['06:00', '08:00', '10:00', '12:00', '14:00'];
 
 // Booking form state (kept in providers instead of widget State).
 final _monthProvider = StateProvider.autoDispose<DateTime>((ref) => currentMonthStart());
+
 /// Picked service date; null means "the first free day from tomorrow".
 final _dateProvider = StateProvider.autoDispose<DateTime?>((ref) => null);
 final _startProvider = StateProvider.autoDispose<String>((ref) => '08:00');

@@ -111,9 +111,8 @@ class _LocationFieldsState extends ConsumerState<LocationFields> {
             for (final d in locations.districtsOf(_province))
               DropdownMenuItem(value: d, child: Text(d)),
           ],
-          onChanged: _province == null
-              ? null
-              : (d) => widget.onChanged((district: d, sector: null)),
+          onChanged:
+              _province == null ? null : (d) => widget.onChanged((district: d, sector: null)),
         ),
         if (widget.showSector) ...[
           const SizedBox(height: 16),

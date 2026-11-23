@@ -34,7 +34,10 @@ class FarmerDashboard extends ConsumerWidget {
             Row(
               children: [
                 InitialsAvatar(initialsOf(me?.name ?? 'N'),
-                    size: 54, bg: AppColors.primary, fg: Colors.white),
+                    photoUrl: me?.photoUrl ?? '',
+                    size: 54,
+                    bg: AppColors.primary,
+                    fg: Colors.white),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -127,7 +130,8 @@ class FarmerDashboard extends ConsumerWidget {
             SectionHeader('Recent Bookings',
                 action: 'View all', onAction: () => context.go('/farmer/bookings')),
             const SizedBox(height: 12),
-            if (bookings.isEmpty) const EmptyState('No bookings yet',
+            if (bookings.isEmpty)
+              const EmptyState('No bookings yet',
                   message: 'Book your first machine to get started.',
                   icon: Icons.calendar_month_outlined,
                   padding: 16),

@@ -12,8 +12,8 @@ import 'register_screen.dart';
 
 final _roleProvider = StateProvider.autoDispose<Role>((ref) => Role.farmer);
 
-final _placeProvider = StateProvider.autoDispose<Place>((ref) =>
-    placeFrom(ref.read(locationsProvider), ref.read(settingsControllerProvider).preferredDistrict, null));
+final _placeProvider = StateProvider.autoDispose<Place>((ref) => placeFrom(
+    ref.read(locationsProvider), ref.read(settingsControllerProvider).preferredDistrict, null));
 
 /// Last step of a Google sign-up: Google gives us an identity but no profile,
 /// so the person picks a role and enters name, phone and district.

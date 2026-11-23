@@ -59,6 +59,15 @@ void main() {
     expect(map.containsKey('jobs'), isFalse);
   });
 
+  test('photo urls map and equipment falls back to the category image', () {
+    final withPhoto = equipmentFromMap('e', {'type': 'Pump', 'photoUrl': 'https://x/e.jpg'});
+    expect(withPhoto.image, 'https://x/e.jpg');
+    expect(equipmentToMap(withPhoto)['photoUrl'], 'https://x/e.jpg');
+    expect(equipmentFromMap('e', {'type': 'Pump'}).image, 'pump.jpg');
+    expect(userFromMap('u', {'photoUrl': 'https://x/a.jpg'}).photoUrl, 'https://x/a.jpg');
+    expect(userFromMap('u', {}).photoUrl, '');
+  });
+
   test('expert mapping with schedule', () {
     final x = expertFromMap('ex1', {
       'name': 'Dr. Uwera',
@@ -81,7 +90,8 @@ void main() {
   });
 
   test('course round trip', () {
-    final c = courseFromMap('c1', {'title': 'T', 'level': 'Beginner', 'topic': 'x', 'lessons': 5, 'image': 'a.jpg'});
+    final c = courseFromMap(
+        'c1', {'title': 'T', 'level': 'Beginner', 'topic': 'x', 'lessons': 5, 'image': 'a.jpg'});
     expect(courseToMap(c)['lessons'], 5);
   });
 
@@ -103,7 +113,8 @@ void main() {
   });
 
   test('notification, dispute and client mappers', () {
-    final n = notificationFromMap('n1', {'userId': 'u', 'title': 'T', 'body': 'B', 'unread': false});
+    final n =
+        notificationFromMap('n1', {'userId': 'u', 'title': 'T', 'body': 'B', 'unread': false});
     expect(n.unread, isFalse);
     final d = disputeFromMap('d1', {'bookingRef': 'NTZ-1', 'reason': 'late', 'status': 'Resolved'});
     expect(d.isOpen, isFalse);

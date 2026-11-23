@@ -4,10 +4,12 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../domain/entities/entities.dart';
+import '../../../domain/repositories/image_storage.dart';
 import '../../../domain/usecases/pricing.dart';
 import '../../../domain/validators.dart';
 import '../../providers/locations_provider.dart';
 import '../../providers/providers.dart';
+import '../../widgets/image_picking.dart';
 import '../../widgets/location_fields.dart';
 import '../../widgets/ui.dart';
 import '../common/role_widgets.dart';
@@ -27,7 +29,10 @@ const ownerNav = [
 /// Bookings for the owner's machines (consultations belong to experts).
 final _ownerBookingsProvider = Provider.autoDispose<List<Booking>>((ref) {
   final all = ref.watch(providerBookingsProvider).valueOrNull ?? const <Booking>[];
-  return [for (final b in all) if (!b.expert) b];
+  return [
+    for (final b in all)
+      if (!b.expert) b
+  ];
 });
 
 const _inMaintenance = 'In maintenance';
@@ -36,8 +41,10 @@ const _freeToday = 'Free today';
 final _equipmentFilterProvider = StateProvider.autoDispose<String>((ref) => 'All');
 final _bookingFilterProvider = StateProvider.autoDispose<String>((ref) => 'Requests');
 
-List<Booking> _withStatus(List<Booking> list, String status) =>
-    [for (final b in list) if (b.status == status) b];
+List<Booking> _withStatus(List<Booking> list, String status) => [
+      for (final b in list)
+        if (b.status == status) b
+    ];
 
 // ---------------------------------------------------------------------------
 // Dashboard
@@ -53,7 +60,10 @@ class OwnerDashboard extends ConsumerWidget {
     final mine = ref.watch(myEquipmentProvider);
     final requests = _withStatus(bookings, BookingStatus.pending);
     final earnings = EarningsView.from(bookings);
-    final inRepair = [for (final e in mine) if (e.inMaintenance) e];
+    final inRepair = [
+      for (final e in mine)
+        if (e.inMaintenance) e
+    ];
 
     return Scaffold(
       body: SafeArea(
@@ -66,10 +76,10 @@ class OwnerDashboard extends ConsumerWidget {
             StatGrid([
               StatSpec('${mine.length}', 'My Equipment', Icons.agriculture_outlined,
                   AppColors.green100, AppColors.primaryDark),
-              StatSpec('${mine.where((e) => e.availability == Availability.freeToday).length}', 'Free Today',
-                  Icons.check_circle_outline, AppColors.blueBg, AppColors.blue),
-              StatSpec('${requests.length}', 'Pending Requests', Icons.schedule,
-                  AppColors.amberBg, AppColors.amberText),
+              StatSpec('${mine.where((e) => e.availability == Availability.freeToday).length}',
+                  'Free Today', Icons.check_circle_outline, AppColors.blueBg, AppColors.blue),
+              StatSpec('${requests.length}', 'Pending Requests', Icons.schedule, AppColors.amberBg,
+                  AppColors.amberText),
               StatSpec(compactRwf(earnings.net), 'Total Earnings (RWF)', Icons.payments_outlined,
                   AppColors.purpleBg, AppColors.purple),
             ]),
@@ -84,10 +94,11 @@ class OwnerDashboard extends ConsumerWidget {
             sectionTitle('Pending Requests',
                 action: 'View all', onAction: () => context.go('/owner/bookings')),
             const SizedBox(height: 12),
-            if (requests.isEmpty) const EmptyState('No pending requests',
-                message: 'New booking requests appear here.',
-                icon: Icons.inbox_outlined,
-                padding: 16),
+            if (requests.isEmpty)
+              const EmptyState('No pending requests',
+                  message: 'New booking requests appear here.',
+                  icon: Icons.inbox_outlined,
+                  padding: 16),
             for (final r in requests.take(2)) ...[
               _RequestTile(booking: r),
               const SizedBox(height: 12),
@@ -405,8 +416,7 @@ class _FormDraft {
   final String district;
   final String sector;
 
-  _FormDraft copyWith({String? type, String? unit, String? district, String? sector}) =>
-      _FormDraft(
+  _FormDraft copyWith({String? type, String? unit, String? district, String? sector}) => _FormDraft(
         type: type ?? this.type,
         unit: unit ?? this.unit,
         district: district ?? this.district,
@@ -429,7 +439,8 @@ class _FormDraftNotifier extends AutoDisposeFamilyNotifier<_FormDraft, String?> 
 
   void setType(String v) => state = state.copyWith(type: v);
   void setUnit(String v) => state = state.copyWith(unit: v);
-  void setPlace(Place v) => state = state.copyWith(district: v.district ?? '', sector: v.sector ?? '');
+  void setPlace(Place v) =>
+      state = state.copyWith(district: v.district ?? '', sector: v.sector ?? '');
 }
 
 final _formDraftProvider = NotifierProvider.autoDispose
@@ -449,6 +460,20 @@ class _EquipmentFormScreenState extends ConsumerState<EquipmentFormScreen> {
   late final TextEditingController _name;
   late final TextEditingController _price;
   late final TextEditingController _about;
+
+  /// Newly picked photo, and whether the owner removed the stored one.
+  ImageFile? _photo;
+  bool _removePhoto = false;
+
+  Future<void> _choosePhoto() async {
+    final picked = await pickImage(context);
+    if (picked != null && mounted) {
+      setState(() {
+        _photo = picked;
+        _removePhoto = false;
+      });
+    }
+  }
 
   @override
   void initState() {
@@ -482,6 +507,8 @@ class _EquipmentFormScreenState extends ConsumerState<EquipmentFormScreen> {
           district: draft.district,
           sector: draft.sector,
           about: _about.text,
+          newPhoto: _photo,
+          removePhoto: _removePhoto,
         );
     if (!mounted) return;
     if (!result.ok) {
@@ -536,6 +563,8 @@ class _EquipmentFormScreenState extends ConsumerState<EquipmentFormScreen> {
     final notifier = ref.read(_formDraftProvider(id).notifier);
     final busy = ref.watch(catalogControllerProvider).busy;
     final place = placeFrom(ref.read(locationsProvider), draft.district, draft.sector);
+    final existingPhoto = editing ? ref.read(equipmentByIdProvider(id))?.photoUrl : null;
+    final hasStored = !_removePhoto && existingPhoto != null && existingPhoto.isNotEmpty;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -545,7 +574,7 @@ class _EquipmentFormScreenState extends ConsumerState<EquipmentFormScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
           children: [
-            // The photo comes from the machine type, so this is a preview only.
+            // Own photo when uploaded; otherwise the category image is used.
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -555,20 +584,50 @@ class _EquipmentFormScreenState extends ConsumerState<EquipmentFormScreen> {
               ),
               child: Row(
                 children: [
-                  AssetPhoto(imageForType(draft.type), width: 84, height: 72, radius: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: SizedBox(
+                      width: 84,
+                      height: 72,
+                      child: _photo != null
+                          ? Image.memory(_photo!.bytes, fit: BoxFit.cover)
+                          : AssetPhoto(hasStored ? existingPhoto : imageForType(draft.type)),
+                    ),
+                  ),
                   const SizedBox(width: 14),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Photo is chosen from the machine type',
-                            style: TextStyle(
+                        Text(
+                            _photo != null || hasStored
+                                ? 'Your photo'
+                                : 'Using the ${draft.type.toLowerCase()} image',
+                            style: const TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.primaryDark)),
-                        SizedBox(height: 2),
-                        Text('Pick the type below to change it.',
-                            style: TextStyle(fontSize: 13, color: AppColors.muted)),
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 8,
+                          children: [
+                            OutlinedButton.icon(
+                              onPressed: busy ? null : _choosePhoto,
+                              icon: const Icon(Icons.add_a_photo_outlined, size: 16),
+                              label: Text(_photo != null || hasStored ? 'Change' : 'Upload'),
+                            ),
+                            if (_photo != null || hasStored)
+                              TextButton(
+                                onPressed: busy
+                                    ? null
+                                    : () => setState(() {
+                                          _photo = null;
+                                          _removePhoto = true;
+                                        }),
+                                child: const Text('Remove'),
+                              ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -673,10 +732,7 @@ class OwnerBookingsScreen extends ConsumerWidget {
                       icon: Icons.event_note_outlined,
                       padding: 50),
                 for (final b in shown) ...[
-                  if (filter == 'Requests')
-                    _RequestTile(booking: b)
-                  else
-                    _BookingRow(booking: b),
+                  if (filter == 'Requests') _RequestTile(booking: b) else _BookingRow(booking: b),
                   const SizedBox(height: 12),
                 ],
               ],

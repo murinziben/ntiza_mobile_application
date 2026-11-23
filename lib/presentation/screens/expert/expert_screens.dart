@@ -168,10 +168,11 @@ class _RequestList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => Column(
         children: [
-          if (requests.isEmpty) const EmptyState('No new requests',
-              message: 'Consultation requests appear here.',
-              icon: Icons.inbox_outlined,
-              padding: 16),
+          if (requests.isEmpty)
+            const EmptyState('No new requests',
+                message: 'Consultation requests appear here.',
+                icon: Icons.inbox_outlined,
+                padding: 16),
           for (final r in requests) ...[
             RequestCard(
               initials: initialsOf(r.customerName),
@@ -227,10 +228,11 @@ class ExpertConsultsScreen extends ConsumerWidget {
                 ? _RequestList(requests: shown)
                 : Column(
                     children: [
-                      if (shown.isEmpty) const EmptyState('Nothing here yet',
-                          message: 'Consultations will show up here.',
-                          icon: Icons.event_note_outlined,
-                          padding: 60),
+                      if (shown.isEmpty)
+                        const EmptyState('Nothing here yet',
+                            message: 'Consultations will show up here.',
+                            icon: Icons.event_note_outlined,
+                            padding: 60),
                       for (final c in shown) ...[
                         PersonCard(
                           initials: initialsOf(c.customerName),

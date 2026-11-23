@@ -13,8 +13,8 @@ import '../../widgets/ui.dart';
 final _roleProvider = StateProvider.autoDispose<Role>((ref) => Role.farmer);
 
 /// District and sector chosen on the sign-up screen; starts at the saved preference.
-final _placeProvider = StateProvider.autoDispose<Place>((ref) =>
-    placeFrom(ref.read(locationsProvider), ref.read(settingsControllerProvider).preferredDistrict, null));
+final _placeProvider = StateProvider.autoDispose<Place>((ref) => placeFrom(
+    ref.read(locationsProvider), ref.read(settingsControllerProvider).preferredDistrict, null));
 
 /// The four roles a person can sign up as, with a one-line description.
 const registerRoles = <(Role, String, IconData)>[

@@ -51,4 +51,3 @@ class FirestoreCatalogRepository implements CatalogRepository {
         (q) => [for (final d in q.docs) courseFromMap(d.id, d.data())],
       );
 }
-

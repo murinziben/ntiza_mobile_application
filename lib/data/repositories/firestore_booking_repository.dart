@@ -58,7 +58,9 @@ class FirestoreBookingRepository implements BookingRepository {
               throw const AppException(
                   'This machine is already booked on that date. Pick another day.');
             }
-            tx.update(machine, {'bookedDates': FieldValue.arrayUnion([booking.dateKey])});
+            tx.update(machine, {
+              'bookedDates': FieldValue.arrayUnion([booking.dateKey])
+            });
           }
           final current = snap.data()?['booking'];
           final n = (current is num ? current.toInt() : 2040) + 1;

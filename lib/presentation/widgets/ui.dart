@@ -266,21 +266,35 @@ class IconTile extends StatelessWidget {
 
 class InitialsAvatar extends StatelessWidget {
   const InitialsAvatar(this.initials,
-      {super.key, this.size = 52, this.bg = AppColors.green100, this.fg = AppColors.primaryDark});
+      {super.key,
+      this.size = 52,
+      this.bg = AppColors.green100,
+      this.fg = AppColors.primaryDark,
+      this.photoUrl = ''});
   final String initials;
+
+  /// Profile picture; when set it replaces the initials.
+  final String photoUrl;
   final double size;
   final Color bg;
   final Color fg;
 
   @override
-  Widget build(BuildContext context) => Container(
-        width: size,
-        height: size,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
-        child: Text(initials,
-            style: TextStyle(color: fg, fontWeight: FontWeight.w700, fontSize: size * 0.3)),
-      );
+  Widget build(BuildContext context) {
+    final text = Text(initials,
+        style: TextStyle(color: fg, fontWeight: FontWeight.w700, fontSize: size * 0.3));
+    return Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
+      child: photoUrl.isEmpty
+          ? text
+          : Image.network(photoUrl,
+              width: size, height: size, fit: BoxFit.cover, errorBuilder: (_, __, ___) => text),
+    );
+  }
 }
 
 class PrimaryButton extends StatelessWidget {

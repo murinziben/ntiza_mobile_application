@@ -43,7 +43,12 @@ class RoleHeader extends ConsumerWidget {
             child: Icon(icon, color: Colors.white),
           )
         else
-          InitialsAvatar(initials, size: 54, bg: AppColors.primary, fg: Colors.white),
+          InitialsAvatar(initials,
+              // Only the signed-in user's own header shows their photo.
+              photoUrl: this.initials == null ? (me?.photoUrl ?? '') : '',
+              size: 54,
+              bg: AppColors.primary,
+              fg: Colors.white),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -456,7 +461,8 @@ class RoleProfileScreen extends ConsumerWidget {
         children: [
           const SizedBox(height: 8),
           Center(
-              child: InitialsAvatar(initials, size: 84, bg: AppColors.primary, fg: Colors.white)),
+              child: InitialsAvatar(initials,
+                  photoUrl: me?.photoUrl ?? '', size: 84, bg: AppColors.primary, fg: Colors.white)),
           const SizedBox(height: 12),
           Center(
               child: Text(name, style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800))),

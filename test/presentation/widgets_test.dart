@@ -28,13 +28,19 @@ final testLocations = RwandaLocations.fromJson([
   {
     'name': 'Southern Province',
     'districts': [
-      {'name': 'Huye', 'sectors': ['Ngoma', 'Tumba']},
+      {
+        'name': 'Huye',
+        'sectors': ['Ngoma', 'Tumba']
+      },
     ],
   },
   {
     'name': 'Kigali City',
     'districts': [
-      {'name': 'Gasabo', 'sectors': ['Remera']},
+      {
+        'name': 'Gasabo',
+        'sectors': ['Remera']
+      },
     ],
   },
 ]);

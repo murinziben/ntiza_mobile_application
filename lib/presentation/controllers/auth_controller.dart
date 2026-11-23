@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/errors/app_exception.dart';
 import '../../domain/entities/app_user.dart';
 import '../../domain/entities/role.dart';
+import '../../domain/repositories/image_storage.dart';
 import '../providers/data_providers.dart';
 import '../providers/dependencies.dart';
 import 'action_notifier.dart';
@@ -81,14 +82,16 @@ class AuthController extends ActionNotifier {
     required String phone,
     required String district,
     String sector = '',
+    ImageFile? newPhoto,
   }) =>
       run(() async {
         final uid = ref.read(currentUidProvider);
         if (uid == null) throw const AppException('Please log in again.');
-        await ref
-            .read(authUseCasesProvider)
-            .updateProfile(uid,
-                name: name, phone: phone, district: district, sector: sector);
+        final photoUrl = newPhoto == null
+            ? null
+            : await ref.read(imageStorageProvider).upload(newPhoto, kind: 'avatar');
+        await ref.read(authUseCasesProvider).updateProfile(uid,
+            name: name, phone: phone, district: district, sector: sector, photoUrl: photoUrl);
       });
 
   Future<ActionResult<void>> signOut() => run(() => ref.read(authRepositoryProvider).signOut());
