@@ -609,7 +609,7 @@ class _AgentNewBookingScreenState extends ConsumerState<AgentNewBookingScreen> {
             const SizedBox(height: 10),
             DropdownButtonFormField<String>(
               key: ValueKey('client-${client?.id}'),
-              initialValue: client?.id,
+              value: client?.id,
               isExpanded: true,
               decoration: const InputDecoration(
                 hintText: 'Choose a farmer',
@@ -632,7 +632,7 @@ class _AgentNewBookingScreenState extends ConsumerState<AgentNewBookingScreen> {
             else
               DropdownButtonFormField<String>(
                 key: ValueKey('eq-${eq?.id}'),
-                initialValue: eq?.id,
+                value: eq?.id,
                 isExpanded: true,
                 decoration: const InputDecoration(
                   hintText: 'Choose equipment',

@@ -545,7 +545,7 @@ class _EquipmentFormScreenState extends ConsumerState<EquipmentFormScreen> {
                     fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.body)),
           ),
           DropdownButtonFormField<String>(
-            initialValue: value,
+            value: value,
             isExpanded: true,
             validator: validator,
             decoration: InputDecoration(prefixIcon: Icon(icon, color: AppColors.muted)),
@@ -585,7 +585,7 @@ class _EquipmentFormScreenState extends ConsumerState<EquipmentFormScreen> {
               decoration: BoxDecoration(
                 color: AppColors.green50,
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: AppColors.primary.withValues(alpha: 0.5)),
+                border: Border.all(color: AppColors.primary.withOpacity(0.5)),
               ),
               child: Row(
                 children: [

@@ -850,7 +850,7 @@ class _SkeletonListState extends State<SkeletonList> with SingleTickerProviderSt
           Container(
             height: widget.height,
             decoration: BoxDecoration(
-              color: AppColors.green100.withValues(alpha: 0.6),
+              color: AppColors.green100.withOpacity(0.6),
               borderRadius: BorderRadius.circular(AppRadius.card),
             ),
           ),

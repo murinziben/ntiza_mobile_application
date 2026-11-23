@@ -77,7 +77,7 @@ class _LocationFieldsState extends ConsumerState<LocationFields> {
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
           key: ValueKey('province-$_province'),
-          initialValue: _province,
+          value: _province,
           isExpanded: true,
           icon: const Icon(Icons.keyboard_arrow_down),
           decoration: const InputDecoration(
@@ -96,7 +96,7 @@ class _LocationFieldsState extends ConsumerState<LocationFields> {
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
           key: ValueKey('district-$_province-${value.district}'),
-          initialValue: value.district,
+          value: value.district,
           isExpanded: true,
           menuMaxHeight: 360,
           icon: const Icon(Icons.keyboard_arrow_down),
@@ -120,7 +120,7 @@ class _LocationFieldsState extends ConsumerState<LocationFields> {
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
             key: ValueKey('sector-${value.district}-${value.sector}'),
-            initialValue: value.sector,
+            value: value.sector,
             isExpanded: true,
             menuMaxHeight: 360,
             icon: const Icon(Icons.keyboard_arrow_down),

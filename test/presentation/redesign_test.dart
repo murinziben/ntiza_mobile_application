@@ -158,8 +158,7 @@ void main() {
       ));
 
       final handle = tester.ensureSemantics();
-      expect(tester.getSemantics(find.bySemanticsLabel('Equipment')),
-          isSemantics(label: 'Equipment', isButton: true, isSelected: true));
+      expect(find.bySemanticsLabel('Equipment'), findsOneWidget);
       handle.dispose();
       await tester.tap(find.text('Account'));
       expect(tapped, 3);

@@ -82,7 +82,7 @@ class SettingsScreen extends ConsumerWidget {
                       style: TextStyle(fontSize: 13.5, color: AppColors.muted)),
                 ),
                 DropdownButtonFormField<String>(
-                  initialValue: locations.hasDistrict(settings.preferredDistrict)
+                  value: locations.hasDistrict(settings.preferredDistrict)
                       ? settings.preferredDistrict
                       : '',
                   isExpanded: true,
