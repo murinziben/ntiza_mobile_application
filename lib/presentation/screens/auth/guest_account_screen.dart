@@ -23,7 +23,7 @@ class GuestAccountScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Center(
-              child: Text('Log in to book equipment, consult experts and track payments.',
+              child: Text('Log in to book equipment and track payments.',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 15, height: 1.45, color: AppColors.muted)),
             ),

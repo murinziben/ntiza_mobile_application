@@ -152,8 +152,7 @@ class _TabFadeState extends State<_TabFade> with SingleTickerProviderStateMixin 
 const publicNav = [
   NavItem('Home', Icons.home_outlined),
   NavItem('Equipment', Icons.agriculture_outlined),
-  NavItem('Experts', Icons.groups_2_outlined),
-  NavItem('Training', Icons.menu_book_outlined),
+  NavItem('Help', Icons.help_outline),
   NavItem('Account', Icons.person_outline),
 ];
 

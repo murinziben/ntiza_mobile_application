@@ -13,10 +13,9 @@ class BookingStatus {
 class BookingKind {
   BookingKind._();
   static const equipment = 'equipment';
-  static const consult = 'consult';
 }
 
-/// A hire request for a machine or a consultation — `bookings/{ref}`.
+/// A hire request for a machine — `bookings/{ref}`.
 ///
 /// Title, image, place and the two names are a snapshot taken when the booking
 /// is made, so history stays correct if the equipment is later edited.
@@ -47,7 +46,7 @@ class Booking {
 
   final String ref;
 
-  /// [BookingKind.equipment] or [BookingKind.consult].
+  /// Always [BookingKind.equipment].
   final String kind;
   final String title;
   final String image;
@@ -64,11 +63,11 @@ class Booking {
   final String farmerId;
   final String farmerName;
 
-  /// The equipment owner or expert who delivers the service.
+  /// The equipment owner who delivers the service.
   final String providerId;
   final String providerName;
 
-  /// Equipment or expert id this booking is for.
+  /// Equipment id this booking is for.
   final String itemId;
   final String scheduled;
   final String location;
@@ -79,7 +78,6 @@ class Booking {
   final String clientName;
   final DateTime? createdAt;
 
-  bool get expert => kind == BookingKind.consult;
   bool get isPaid => paidVia != null && paidVia!.isNotEmpty;
 
   /// Money the provider has earned: the farmer paid (or the job is done) and

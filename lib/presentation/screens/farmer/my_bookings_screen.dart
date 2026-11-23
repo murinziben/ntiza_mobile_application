@@ -17,9 +17,7 @@ final _tabProvider = StateProvider.autoDispose<String>((ref) => 'Upcoming');
 class MyBookingsScreen extends ConsumerWidget {
   const MyBookingsScreen({super.key});
 
-  String _subtitle(Booking b) => b.expert
-      ? 'Consultation · ${b.dateLabel} · ${b.detail}'
-      : '${b.dateLabel} · ${b.detail} · ${rwf(b.total)}';
+  String _subtitle(Booking b) => '${b.dateLabel} · ${b.detail} · ${rwf(b.total)}';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -45,7 +43,7 @@ class MyBookingsScreen extends ConsumerWidget {
                   if (items.isEmpty)
                     tab == 'Upcoming'
                         ? EmptyState('No upcoming bookings',
-                            message: 'Book a machine or an expert to get started.',
+                            message: 'Book a machine to get started.',
                             icon: Icons.event_available_outlined,
                             actionLabel: 'Book equipment',
                             onAction: () => context.go('/farmer/book'))

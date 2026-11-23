@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../domain/entities/entities.dart';
-import '../../../domain/validators.dart';
 import '../../providers/providers.dart';
 import '../../widgets/ui.dart';
 
@@ -21,7 +20,6 @@ class BookingDetailScreen extends ConsumerWidget {
     final confirmed = b.status == BookingStatus.confirmed || b.status == BookingStatus.completed;
     final completed = b.status == BookingStatus.completed;
     final cancelled = b.status == BookingStatus.cancelled;
-    final who = b.expert ? 'Expert' : 'Owner';
     return [
       (_S.done, 'Request sent', b.created),
       if (cancelled)
@@ -34,12 +32,12 @@ class BookingDetailScreen extends ConsumerWidget {
         ),
         (
           confirmed ? _S.done : (paid ? _S.current : _S.todo),
-          '$who confirmed',
+          'Owner confirmed',
           confirmed ? 'Confirmed by ${b.providerName}' : 'Pending'
         ),
         (
           completed ? _S.done : (confirmed ? _S.current : _S.todo),
-          b.expert ? 'Consultation scheduled' : 'Equipment on the way',
+          'Equipment on the way',
           confirmed ? b.dateLabel : 'Pending'
         ),
         (completed ? _S.done : _S.todo, 'Service completed', completed ? b.dateLabel : 'Pending'),
@@ -69,7 +67,7 @@ class BookingDetailScreen extends ConsumerWidget {
   Future<void> _cancel(BuildContext context, WidgetRef ref, Booking b) async {
     final ok = await _confirm(context,
         title: 'Cancel this booking?',
-        body: 'The ${b.expert ? 'expert' : 'owner'} will be told you cancelled.',
+        body: 'The owner will be told you cancelled.',
         action: 'Cancel booking');
     if (!ok || !context.mounted) return;
     final r =
@@ -94,16 +92,6 @@ class BookingDetailScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _report(BuildContext context, Booking b) async {
-    final sent = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (_) => _ReportSheet(booking: b),
-    );
-    if (sent == true && context.mounted) showToast(context, 'Problem reported. We will review it.');
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final b = ref.watch(bookingByRefProvider(bookingRef));
@@ -114,9 +102,6 @@ class BookingDetailScreen extends ConsumerWidget {
     final busy = ref.watch(bookingControllerProvider).busy;
     final cancelled = b.status == BookingStatus.cancelled;
     final steps = _steps(b);
-    final disputes = (ref.watch(myDisputesProvider).valueOrNull ?? const <Dispute>[])
-        .where((d) => d.bookingRef == b.ref)
-        .toList();
 
     return Scaffold(
       appBar: TopBar('Booking #${b.ref}'),
@@ -128,15 +113,7 @@ class BookingDetailScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (b.expert)
-                  Container(
-                    height: 120,
-                    color: AppColors.purpleBg,
-                    alignment: Alignment.center,
-                    child: const Icon(Icons.groups_2_outlined, size: 56, color: AppColors.purple),
-                  )
-                else
-                  AssetPhoto(b.image, height: 190),
+                AssetPhoto(b.image, height: 190),
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
@@ -153,7 +130,7 @@ class BookingDetailScreen extends ConsumerWidget {
                         ],
                       ),
                       const SizedBox(height: 6),
-                      Text('${b.expert ? 'Expert' : 'Owner'}: ${b.providerName}',
+                      Text('Owner: ${b.providerName}',
                           style: const TextStyle(fontSize: 14, color: AppColors.muted)),
                     ],
                   ),
@@ -186,24 +163,19 @@ class BookingDetailScreen extends ConsumerWidget {
             child: Column(
               children: [
                 _kv('Date', b.scheduled.isEmpty ? b.dateLabel : b.scheduled),
-                _kv(b.expert ? 'Format' : 'Duration', b.detail),
-                _kv(b.expert ? 'Topic' : 'Location', b.expert ? b.title : b.location),
+                _kv('Duration', b.detail),
+                _kv('Location', b.location),
                 _kv('Total', rwf(b.total)),
                 _kv('Payment', b.isPaid ? 'Paid via ${b.paidVia}' : 'Not paid yet'),
               ],
             ),
           ),
-          for (final d in disputes) ...[
-            const SizedBox(height: 12),
-            _DisputeRow(dispute: d),
-          ],
           const SizedBox(height: 16),
           if (!b.isPaid && !cancelled) ...[
             PrimaryButton('Pay ${rwf(b.total)}',
                 height: 54, onPressed: () => context.push('/farmer/pay/${b.ref}')),
             const SizedBox(height: 12),
           ],
-          OutlineButtonX('Report a problem', height: 52, onPressed: () => _report(context, b)),
           if (b.status == BookingStatus.pending) ...[
             const SizedBox(height: 12),
             OutlineButtonX(busy ? 'Please wait…' : 'Cancel booking',
@@ -238,112 +210,6 @@ class BookingDetailScreen extends ConsumerWidget {
           ],
         ),
       );
-}
-
-/// Status of a problem the farmer reported on this booking.
-class _DisputeRow extends StatelessWidget {
-  const _DisputeRow({required this.dispute});
-  final Dispute dispute;
-
-  @override
-  Widget build(BuildContext context) {
-    final open = dispute.isOpen;
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: open ? AppColors.amberBg : AppColors.green50,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(open ? Icons.flag_outlined : Icons.check_circle_outline,
-              color: open ? AppColors.amberText : AppColors.primaryDark),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(open ? 'Problem reported · under review' : 'Problem resolved',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: open ? AppColors.amberText : AppColors.primaryDark)),
-                const SizedBox(height: 2),
-                Text(open || dispute.resolution.isEmpty ? dispute.reason : dispute.resolution,
-                    style: const TextStyle(fontSize: 14, color: AppColors.body)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Bottom sheet that collects the problem description.
-class _ReportSheet extends ConsumerStatefulWidget {
-  const _ReportSheet({required this.booking});
-  final Booking booking;
-
-  @override
-  ConsumerState<_ReportSheet> createState() => _ReportSheetState();
-}
-
-class _ReportSheetState extends ConsumerState<_ReportSheet> {
-  final _formKey = GlobalKey<FormState>();
-  final _reason = TextEditingController();
-
-  @override
-  void dispose() {
-    _reason.dispose();
-    super.dispose();
-  }
-
-  Future<void> _send() async {
-    if (!_formKey.currentState!.validate()) return;
-    final r = await ref
-        .read(bookingControllerProvider.notifier)
-        .reportProblem(widget.booking, _reason.text);
-    if (!mounted) return;
-    if (r.ok) {
-      Navigator.of(context).pop(true);
-    } else {
-      showToast(context, r.error!);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final busy = ref.watch(bookingControllerProvider).busy;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(16, 0, 16, MediaQuery.of(context).viewInsets.bottom + 16),
-      child: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Report a problem',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 4),
-              Text('Booking ${widget.booking.ref} · an admin will review it.',
-                  style: const TextStyle(fontSize: 14, color: AppColors.muted)),
-              const SizedBox(height: 14),
-              LabeledField('What went wrong?',
-                  hint: 'Describe the problem in a few sentences',
-                  controller: _reason,
-                  maxLines: 4,
-                  validator: Validators.reason),
-              const SizedBox(height: 16),
-              PrimaryButton(busy ? 'Sending…' : 'Send report',
-                  height: 52, onPressed: busy ? null : _send),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class _TimelineRow extends StatelessWidget {

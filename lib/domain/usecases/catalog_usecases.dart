@@ -2,11 +2,10 @@ import '../../core/errors/app_exception.dart';
 import '../../core/utils/formatters.dart';
 import '../entities/booking.dart';
 import '../entities/equipment.dart';
-import '../entities/expert.dart';
 import '../repositories/catalog_repository.dart';
 import '../validators.dart';
 
-/// Rules for listing, editing and removing equipment and expert profiles.
+/// Rules for listing, editing and removing equipment.
 class CatalogUseCases {
   CatalogUseCases(this._catalog);
 
@@ -48,13 +47,5 @@ class CatalogUseCases {
       throw const AppException('A booking already exists on one of those days.');
     }
     await _catalog.setBlockedDates(equipment.id, keys);
-  }
-
-  Future<void> saveAvailability(Expert expert) async {
-    if (expert.fee <= 0) throw const AppException('Enter a fee greater than zero.');
-    if (expert.sessionMinutes <= 0) {
-      throw const AppException('Enter a session length in minutes.');
-    }
-    await _catalog.saveExpert(expert);
   }
 }

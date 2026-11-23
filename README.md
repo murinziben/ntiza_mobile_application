@@ -1,8 +1,7 @@
-# NTIZA — agricultural equipment & expert marketplace for Rwanda
+# NTIZA — agricultural equipment booking for Rwanda
 
-NTIZA lets Rwandan farmers **find and book tractors, harvesters, pumps and other equipment**,
-**consult agricultural experts**, **pay with Mobile Money** and **take short training courses**.
-Equipment owners, experts and booking agents have their own dashboards, and an admin approves partners.
+NTIZA lets Rwandan farmers **find and book tractors, harvesters, pumps and other equipment** and
+**pay with Mobile Money**. Equipment owners and booking agents have their own dashboards, and an admin approves partners.
 
 Built with **Flutter (Material 3)**, **Riverpod** for state management, **go_router**, and
 **Firebase** (Authentication + Cloud Firestore). Runs on Android and iOS only (mobile app).
@@ -27,12 +26,11 @@ Screenshots are stored in [`docs/screenshots`](docs/screenshots). Add yours afte
 
 | Role | What they can do |
 |---|---|
-| **Visitor** | Browse equipment, experts and courses; open the equipment detail page |
-| **Farmer** | Register, verify e-mail, book equipment or an expert (calendar, duration, price summary), pay by MTN MoMo / Airtel Money (demo), track bookings, cancel / delete history, report a problem, receive notifications |
+| **Visitor** | Browse equipment; open the equipment detail page |
+| **Farmer** | Register, verify e-mail, book equipment (calendar, duration, price summary), pay by MTN MoMo / Airtel Money (demo), track bookings, cancel / delete history, receive notifications |
 | **Equipment owner** | Add, edit, delete equipment; change status (Available / Booked / Maintenance); accept, decline and complete requests; earnings chart from real bookings |
-| **Expert** | Set weekly availability and fee, accept or decline consultation requests, see earnings |
 | **Booking agent** | Manage a list of farmers (add / edit / delete), book equipment on their behalf, see commission |
-| **Admin** | Approve or reject partner applications, suspend / reactivate / delete users, resolve disputes, load demo data |
+| **Admin** | Approve or reject partner applications, suspend / reactivate / delete users, load demo data |
 | **Everyone** | Settings: text size, notifications on/off, preferred district (saved with SharedPreferences), edit profile |
 
 ### Requirements checklist (course rubric)
@@ -42,7 +40,7 @@ Screenshots are stored in [`docs/screenshots`](docs/screenshots). Add yours afte
 | Advanced state management, no `setState` | Riverpod controllers in `lib/presentation/controllers`, providers in `lib/presentation/providers` |
 | Clean Architecture | `lib/domain` (entities, repository interfaces, use cases), `lib/data` (Firebase), `lib/presentation` (screens, widgets, providers) |
 | ERD + Firestore | [`docs/ERD.md`](docs/ERD.md), mappers in `lib/data/mappers/firestore_mappers.dart` |
-| CRUD | Equipment, bookings, notifications, agent clients, disputes, profile, expert availability |
+| CRUD | Equipment, bookings, notifications, agent clients, profile |
 | Two auth methods | E-mail/password + Google; registration, login, logout, password reset, e-mail verification, session kept across restarts |
 | Security rules | [`firestore.rules`](firestore.rules), indexes in [`firestore.indexes.json`](firestore.indexes.json) |
 | SharedPreferences (≥ 3) | text size, notifications, preferred district, remembered e-mail, onboarding seen |
@@ -55,7 +53,7 @@ lib/
 ├── main.dart, app.dart            # entry point, MaterialApp.router
 ├── core/                          # theme, router (with role guards), formatters, errors
 ├── domain/                        # pure Dart — no Flutter, no Firebase
-│   ├── entities/                  #   Equipment, Booking, AppUser, Expert, ...
+│   ├── entities/                  #   Equipment, Booking, AppUser, ...
 │   ├── repositories/              #   abstract interfaces
 │   ├── usecases/                  #   auth, booking, catalog, agent rules + pricing
 │   └── validators.dart            #   input validation
@@ -65,7 +63,7 @@ lib/
 └── presentation/
     ├── controllers/               #   Riverpod Notifiers (ActionResult pattern)
     ├── providers/                 #   dependency injection + live Firestore streams
-    ├── screens/                   #   public, auth, farmer, owner, agent, expert, admin, common
+    ├── screens/                   #   public, auth, farmer, owner, agent, admin, common
     └── widgets/                   #   reusable UI (cards, buttons, fields, chips)
 test/                              # unit, widget and controller tests with in-memory fakes
 docs/                              # ERD, report material, demo script
@@ -115,7 +113,7 @@ flutter test --coverage      # coverage report: coverage/lcov.info
 * Bookings are visible only to the farmer, the provider, the booking agent and admins; each side may
   change only the fields it is meant to (provider → `status`; farmer → `paidVia` or cancel while pending).
 * Equipment is public to read; only an **approved owner** can create it and only for themselves.
-* Notifications, agent clients and disputes are private to their owner / admin.
+* Notifications and agent clients are private to their owner / admin.
 
 ## Known limitations
 * Mobile Money payment is **simulated** (a 2-second approval, then the booking is marked paid). A real

@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../domain/entities/entities.dart';
 import '../../../domain/repositories/image_storage.dart';
-import '../../../domain/usecases/pricing.dart';
 import '../../../domain/validators.dart';
 import '../../providers/locations_provider.dart';
 import '../../providers/providers.dart';
@@ -22,17 +21,12 @@ const ownerNav = [
   NavItem('Home', Icons.grid_view_outlined),
   NavItem('Equipment', Icons.agriculture_outlined),
   NavItem('Bookings', Icons.calendar_today_outlined),
-  NavItem('Earnings', Icons.payments_outlined),
   NavItem('Profile', Icons.person_outline),
 ];
 
-/// Bookings for the owner's machines (consultations belong to experts).
+/// Bookings for the owner's machines.
 final _ownerBookingsProvider = Provider.autoDispose<List<Booking>>((ref) {
-  final all = ref.watch(providerBookingsProvider).valueOrNull ?? const <Booking>[];
-  return [
-    for (final b in all)
-      if (!b.expert) b
-  ];
+  return ref.watch(providerBookingsProvider).valueOrNull ?? const <Booking>[];
 });
 
 const _inMaintenance = 'In maintenance';
@@ -50,7 +44,7 @@ List<Booking> _withStatus(List<Booking> list, String status) => [
 // Dashboard
 // ---------------------------------------------------------------------------
 
-/// Owner home: key numbers, earnings chart, pending requests, machines in repair.
+/// Owner home: key numbers, earnings chart and recent earnings, pending requests, machines in repair.
 class OwnerDashboard extends ConsumerWidget {
   const OwnerDashboard({super.key});
 
@@ -60,6 +54,7 @@ class OwnerDashboard extends ConsumerWidget {
     final mine = ref.watch(myEquipmentProvider);
     final requests = _withStatus(bookings, BookingStatus.pending);
     final earnings = EarningsView.from(bookings);
+    final earningRows = payoutRows(bookings, Icons.agriculture_outlined);
     final inRepair = [
       for (final e in mine)
         if (e.inMaintenance) e
@@ -103,6 +98,16 @@ class OwnerDashboard extends ConsumerWidget {
               _RequestTile(booking: r),
               const SizedBox(height: 12),
             ],
+            const SizedBox(height: 12),
+            sectionTitle('Recent earnings'),
+            const SizedBox(height: 12),
+            if (earningRows.isEmpty)
+              const EmptyState('No completed jobs yet',
+                  message: 'Completed jobs will appear here.',
+                  icon: Icons.payments_outlined,
+                  padding: 16)
+            else
+              RowsCard(earningRows.take(3).toList()),
             if (inRepair.isNotEmpty) ...[
               const SizedBox(height: 12),
               sectionTitle('Needs attention'),
@@ -777,51 +782,4 @@ class _BookingRow extends ConsumerWidget {
           ],
         ),
       );
-}
-
-// ---------------------------------------------------------------------------
-// Earnings
-// ---------------------------------------------------------------------------
-
-/// Net earnings, monthly chart and recent transactions from completed jobs.
-class OwnerEarningsScreen extends ConsumerWidget {
-  const OwnerEarningsScreen({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final bookings = ref.watch(_ownerBookingsProvider);
-    final earnings = EarningsView.from(bookings);
-    final rows = payoutRows(bookings, Icons.agriculture_outlined);
-    return Scaffold(
-      appBar: const TopBar('Earnings', back: false),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          BalanceCard(
-            label: 'Total earnings',
-            amount: rwf(earnings.net),
-            note: 'After ${(BookingPricing.platformCommission * 100).round()}% platform commission',
-            button: 'Payouts via Mobile Money',
-          ),
-          const SizedBox(height: 16),
-          BarCard(
-            caption: 'Last 6 months',
-            total: rwf(earnings.sixMonthTotal),
-            labels: earnings.labels,
-            values: earnings.values,
-          ),
-          const SizedBox(height: 22),
-          sectionTitle('Transactions'),
-          const SizedBox(height: 12),
-          if (rows.isEmpty)
-            const EmptyState('No completed jobs yet',
-                message: 'Completed jobs and payouts will appear here.',
-                icon: Icons.payments_outlined,
-                padding: 24)
-          else
-            RowsCard(rows),
-        ],
-      ),
-    );
-  }
 }

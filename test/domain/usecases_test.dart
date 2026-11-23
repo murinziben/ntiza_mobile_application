@@ -127,13 +127,11 @@ void main() {
   group('BookingUseCases', () {
     late FakeBookingRepository bookings;
     late FakeNotificationRepository notifications;
-    late FakeAdminRepository admin;
     late BookingUseCases useCases;
     setUp(() {
       bookings = FakeBookingRepository();
       notifications = FakeNotificationRepository();
-      admin = FakeAdminRepository();
-      useCases = BookingUseCases(bookings, notifications, admin);
+      useCases = BookingUseCases(bookings, notifications);
     });
 
     test('scheduledLabel formats weekday, date and time', () {
@@ -274,33 +272,6 @@ void main() {
       expect(notifications.added.single.$3, contains('Mukamana Aline'));
     });
 
-    test('bookExpert charges the expert fee and refuses experts who are not accepting', () async {
-      const expert =
-          Expert(id: 'ex1', name: 'Dr. Uwera', field: 'Crops', category: 'Crops', fee: 20000);
-      final ref = await useCases.bookExpert(
-        expert: expert,
-        farmer: sampleFarmer,
-        date: DateTime(2026, 11, 18),
-        time: '14:00',
-        mode: 'Phone call',
-        topic: 'Maize leaf yellowing',
-      );
-      expect(ref, 'NTZ-2041');
-      expect(bookings.created.single.total, 20000);
-      expect(bookings.created.single.kind, BookingKind.consult);
-      expect(notifications.added.single.$1, 'ex1');
-      expect(
-        () => useCases.bookExpert(
-            expert: expert.copyWith(accepting: false),
-            farmer: sampleFarmer,
-            date: DateTime(2026, 11, 18),
-            time: '14:00',
-            mode: 'Phone call',
-            topic: 'Maize'),
-        throwsA(isA<AppException>()),
-      );
-    });
-
     test('pay records the provider and notifies both sides', () async {
       await useCases.pay(sampleBooking(), 'MTN MoMo');
       expect(bookings.paid, ['NTZ-2041:MTN MoMo']);
@@ -318,15 +289,6 @@ void main() {
       expect(() => useCases.deleteBooking(sampleBooking()), throwsA(isA<AppException>()));
       await useCases.deleteBooking(sampleBooking(status: BookingStatus.completed));
       expect(bookings.deleted, ['NTZ-2041']);
-    });
-
-    test('reportProblem needs a real reason and creates a dispute', () async {
-      expect(() => useCases.reportProblem(sampleBooking(), sampleFarmer, 'bad'),
-          throwsA(isA<AppException>()));
-      await useCases.reportProblem(
-          sampleBooking(), sampleFarmer, 'The operator arrived two hours late.');
-      expect(admin.disputes.single.bookingRef, 'NTZ-2041');
-      expect(admin.disputes.single.isOpen, isTrue);
     });
   });
 
@@ -383,16 +345,9 @@ void main() {
           throwsA(isA<AppException>()));
     });
 
-    test('setMaintenance and saveAvailability', () async {
+    test('setMaintenance', () async {
       await useCases.setMaintenance(sampleTractor, true);
       expect(catalog.updated.single.inMaintenance, isTrue);
-      const expert = Expert(id: 'ex1', name: 'Dr', field: 'Crops', category: 'Crops');
-      await useCases.saveAvailability(expert.copyWith(fee: 12000, sessionMinutes: 45));
-      expect(catalog.experts.single.fee, 12000);
-      expect(
-          () => useCases.saveAvailability(expert.copyWith(fee: 0)), throwsA(isA<AppException>()));
-      expect(() => useCases.saveAvailability(expert.copyWith(sessionMinutes: 0)),
-          throwsA(isA<AppException>()));
     });
   });
 
@@ -425,12 +380,12 @@ void main() {
       expect(Role.owner.needsApproval, isTrue);
       expect(Role.farmer.needsApproval, isFalse);
       expect(Role.admin.label, 'Admin');
-      expect(roleFromName('expert'), Role.expert);
+      expect(roleFromName('expert'), Role.farmer);
       expect(roleFromName('unknown'), Role.farmer);
     });
 
     test('AppUser.firstName skips honorifics', () {
-      const u = AppUser(uid: '1', name: 'Dr. Uwera Solange', role: Role.expert, status: 'active');
+      const u = AppUser(uid: '1', name: 'Dr. Uwera Solange', role: Role.agent, status: 'active');
       expect(u.firstName, 'Uwera');
       expect(u.copyWith(status: UserStatus.suspended).isActive, isFalse);
     });
@@ -470,15 +425,6 @@ void main() {
       expect(b.earlier, isTrue);
       expect(b.isPaid, isFalse);
       expect(b.customerName, 'Uwase Esperance');
-      expect(b.expert, isFalse);
-      expect(sampleBooking(kind: BookingKind.consult).expert, isTrue);
-    });
-
-    test('Expert.fullSchedule covers every weekday', () {
-      const x = Expert(
-          id: 'e', name: 'n', field: 'f', category: 'c', schedule: {'Monday': '08:00 – 12:00'});
-      expect(x.fullSchedule.length, 7);
-      expect(x.fullSchedule['Tuesday'], '');
     });
   });
 }

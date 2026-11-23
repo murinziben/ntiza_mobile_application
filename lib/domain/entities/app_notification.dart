@@ -17,7 +17,7 @@ class AppNotification {
   final String title;
   final String body;
 
-  /// booking | payment | training | expert | dispute
+  /// booking | payment
   final String kind;
   final bool unread;
   final DateTime? createdAt;

@@ -2,22 +2,18 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../domain/entities/agent_client.dart';
 import '../../domain/entities/app_user.dart';
-import '../../domain/entities/dispute.dart';
-import '../../domain/entities/expert.dart';
-import '../../domain/entities/role.dart';
 import '../../domain/repositories/admin_repository.dart';
 import '../mappers/firestore_mappers.dart';
 import '../sample_data.dart';
 import 'firebase_errors.dart';
 
-/// Admin tools and disputes stored in Cloud Firestore.
+/// Admin tools stored in Cloud Firestore.
 class FirestoreAdminRepository implements AdminRepository {
   FirestoreAdminRepository(this._db);
 
   final FirebaseFirestore _db;
 
   CollectionReference<Map<String, dynamic>> get _users => _db.collection('users');
-  CollectionReference<Map<String, dynamic>> get _disputes => _db.collection('disputes');
 
   @override
   Stream<List<AppUser>> watchUsers() => _users.snapshots().map(
@@ -25,22 +21,11 @@ class FirestoreAdminRepository implements AdminRepository {
       );
 
   @override
-  Future<void> decideApplication(AppUser user, {required bool approve}) => guardData(() async {
-        final batch = _db.batch();
-        batch.update(
-            _users.doc(user.uid), {'status': approve ? UserStatus.active : UserStatus.rejected});
-        if (approve && user.role == Role.expert) {
-          final expert = Expert(
-            id: user.uid,
-            name: user.name,
-            field: 'General agronomy',
-            category: 'Crops',
-            schedule: defaultExpertSchedule,
-          );
-          batch.set(_db.collection('experts').doc(user.uid), expertToMap(expert));
-        }
-        await batch.commit();
-      });
+  Future<void> decideApplication(AppUser user, {required bool approve}) => guardData(
+        () => _users
+            .doc(user.uid)
+            .update({'status': approve ? UserStatus.active : UserStatus.rejected}),
+      );
 
   @override
   Future<void> setUserStatus(String uid, String status) =>
@@ -50,40 +35,10 @@ class FirestoreAdminRepository implements AdminRepository {
   Future<void> deleteUser(String uid) => guardData(() => _users.doc(uid).delete());
 
   @override
-  Stream<List<Dispute>> watchDisputes() => _disputes
-      .orderBy('createdAt', descending: true)
-      .snapshots()
-      .map((q) => [for (final d in q.docs) disputeFromMap(d.id, d.data())]);
-
-  @override
-  Stream<List<Dispute>> watchDisputesRaisedBy(String uid) => _disputes
-      .where('raisedBy', isEqualTo: uid)
-      .snapshots()
-      .map((q) => [for (final d in q.docs) disputeFromMap(d.id, d.data())]);
-
-  @override
-  Future<void> createDispute(Dispute d) => guardData(() => _disputes.add(disputeToMap(d)));
-
-  @override
-  Future<void> resolveDispute(String id, String resolution) => guardData(
-        () => _disputes.doc(id).update({'status': Dispute.resolved, 'resolution': resolution}),
-      );
-
-  @override
-  Future<void> deleteDispute(String id) => guardData(() => _disputes.doc(id).delete());
-
-  @override
   Future<void> seedDemoData() => guardData(() async {
         final batch = _db.batch();
         for (final e in sampleEquipment) {
           batch.set(_db.collection('equipment').doc(e.id), equipmentCreateMap(e));
-        }
-        for (final x in sampleExperts) {
-          batch.set(_db.collection('experts').doc(x.id),
-              expertToMap(x.copyWith(schedule: defaultExpertSchedule)));
-        }
-        for (final c in sampleCourses) {
-          batch.set(_db.collection('courses').doc(c.id), courseToMap(c));
         }
         await batch.commit();
       });

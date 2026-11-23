@@ -7,7 +7,7 @@ import '../../../domain/entities/entities.dart';
 import '../../providers/providers.dart';
 import '../../widgets/ui.dart';
 
-const _filters = ['All', 'Bookings', 'Payments', 'Training'];
+const _filters = ['All', 'Bookings', 'Payments'];
 
 /// Selected filter chip.
 final _filterProvider = StateProvider.autoDispose<String>((ref) => 'All');
@@ -19,9 +19,8 @@ final _hiddenProvider = StateProvider.autoDispose<Set<String>>((ref) => const {}
 
 /// Whether [n] belongs to the chip called [filter].
 bool _matches(String filter, AppNotification n) => switch (filter) {
-      'Bookings' => n.kind == 'booking' || n.kind == 'expert' || n.kind == 'dispute',
+      'Bookings' => n.kind == 'booking',
       'Payments' => n.kind == 'payment',
-      'Training' => n.kind == 'training',
       _ => true,
     };
 
@@ -29,9 +28,7 @@ bool _matches(String filter, AppNotification n) => switch (filter) {
 (IconData, Color, Color) _styleFor(String kind) => switch (kind) {
       'booking' => (Icons.check_circle_outline, AppColors.green100, AppColors.primaryDark),
       'payment' => (Icons.payments_outlined, AppColors.blueBg, AppColors.blue),
-      'expert' => (Icons.groups_2_outlined, AppColors.purpleBg, AppColors.purple),
-      'training' => (Icons.menu_book_outlined, AppColors.amberBg, AppColors.amberText),
-      _ => (Icons.flag_outlined, AppColors.dangerBg, AppColors.danger),
+      _ => (Icons.notifications_none, AppColors.neutral, AppColors.body),
     };
 
 /// The user's notifications: tap to mark read, swipe left to delete.

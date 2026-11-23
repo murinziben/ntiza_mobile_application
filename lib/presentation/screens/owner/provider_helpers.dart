@@ -7,8 +7,7 @@ import '../../providers/providers.dart';
 import '../../widgets/ui.dart';
 import '../common/role_widgets.dart';
 
-/// Helpers shared by the owner and expert screens (both are "providers" of a
-/// service and see the bookings assigned to them).
+/// Helpers shared by the owner screens.
 
 /// Changes a booking's status through the controller and tells the user.
 Future<void> changeBookingStatus(

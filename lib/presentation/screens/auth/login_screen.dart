@@ -70,7 +70,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               const Text('Welcome back',
                   style: TextStyle(fontSize: 34, fontWeight: FontWeight.w800)),
               const SizedBox(height: 10),
-              const Text('Log in to manage your bookings, equipment and consultations.',
+              const Text('Log in to manage your bookings and equipment.',
                   style: TextStyle(fontSize: 17, height: 1.4, color: AppColors.muted)),
               const SizedBox(height: 26),
               LabeledField('E-mail',

@@ -73,9 +73,5 @@ void main() {
       expect(Validators.price('0'), isNotNull);
       expect(Validators.price(''), isNotNull);
     });
-    test('problem reports need a real description', () {
-      expect(Validators.reason('too short'), isNotNull);
-      expect(Validators.reason('The operator never arrived.'), isNull);
-    });
   });
 }

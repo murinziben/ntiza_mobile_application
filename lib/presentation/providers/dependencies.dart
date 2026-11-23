@@ -62,7 +62,6 @@ final authUseCasesProvider =
 final bookingUseCasesProvider = Provider<BookingUseCases>((ref) => BookingUseCases(
       ref.watch(bookingRepositoryProvider),
       ref.watch(notificationRepositoryProvider),
-      ref.watch(adminRepositoryProvider),
     ));
 final catalogUseCasesProvider =
     Provider<CatalogUseCases>((ref) => CatalogUseCases(ref.watch(catalogRepositoryProvider)));

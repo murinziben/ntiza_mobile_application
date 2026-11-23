@@ -126,7 +126,6 @@ class FakeNotificationRepository implements NotificationRepository {
 }
 
 class FakeAdminRepository implements AdminRepository {
-  final disputes = <Dispute>[];
   final decisions = <String>[];
 
   @override
@@ -143,21 +142,6 @@ class FakeAdminRepository implements AdminRepository {
   Future<void> deleteUser(String uid) async {}
 
   @override
-  Stream<List<Dispute>> watchDisputes() => Stream.value(disputes);
-
-  @override
-  Stream<List<Dispute>> watchDisputesRaisedBy(String uid) => Stream.value(disputes);
-
-  @override
-  Future<void> createDispute(Dispute dispute) async => disputes.add(dispute);
-
-  @override
-  Future<void> resolveDispute(String id, String resolution) async {}
-
-  @override
-  Future<void> deleteDispute(String id) async {}
-
-  @override
   Future<void> seedDemoData() async {}
 }
 
@@ -165,7 +149,6 @@ class FakeCatalogRepository implements CatalogRepository {
   final added = <Equipment>[];
   final updated = <Equipment>[];
   final deleted = <String>[];
-  final experts = <Expert>[];
 
   @override
   Stream<List<Equipment>> watchEquipment() => Stream.value(added);
@@ -186,15 +169,6 @@ class FakeCatalogRepository implements CatalogRepository {
 
   @override
   Future<void> setBlockedDates(String id, List<String> dateKeys) async => blocked[id] = dateKeys;
-
-  @override
-  Stream<List<Expert>> watchExperts() => Stream.value(experts);
-
-  @override
-  Future<void> saveExpert(Expert expert) async => experts.add(expert);
-
-  @override
-  Stream<List<Course>> watchCourses() => Stream.value(const []);
 }
 
 class FakeAgentRepository implements AgentRepository {

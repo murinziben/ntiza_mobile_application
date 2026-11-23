@@ -1,6 +1,4 @@
-import '../domain/entities/course.dart';
 import '../domain/entities/equipment.dart';
-import '../domain/entities/expert.dart';
 
 /// Demo catalogue loaded by the admin ("Load demo data").
 const sampleEquipment = <Equipment>[
@@ -62,66 +60,4 @@ const sampleEquipment = <Equipment>[
     about: 'Petrol-driven irrigation pump with hose kit. Fuel not included.',
     specs: [Spec('Power', '5 HP'), Spec('Flow', '60 m³/h'), Spec('Fuel', 'Not included')],
   ),
-];
-
-const sampleExperts = <Expert>[
-  Expert(
-      id: 'ex1',
-      name: 'Dr. Uwera Solange',
-      field: 'Crop Production',
-      category: 'Crops',
-      rating: 4.9,
-      years: 12),
-  Expert(
-      id: 'ex2',
-      name: 'Prof. Nkusi Damien',
-      field: 'Soil Management',
-      category: 'Soil',
-      rating: 4.8,
-      years: 15),
-  Expert(
-      id: 'ex3',
-      name: 'Dr. Mukamana Jeanne',
-      field: 'Pest & Disease Control',
-      category: 'Pests',
-      rating: 4.7,
-      years: 9),
-  Expert(
-      id: 'ex4',
-      name: 'Eng. Rutayisire Bob',
-      field: 'Irrigation & Water',
-      category: 'Irrigation',
-      rating: 4.8,
-      years: 11),
-];
-
-const sampleCourses = <Course>[
-  Course(
-      id: 'c1',
-      title: 'Tractor Operation & Safety',
-      level: 'Beginner',
-      topic: 'Equipment',
-      lessons: 7,
-      image: 'hero_villagers.jpg'),
-  Course(
-      id: 'c2',
-      title: 'Irrigation Systems for Small Farms',
-      level: 'Intermediate',
-      topic: 'Irrigation',
-      lessons: 8,
-      image: 'course_irrigation.jpg'),
-  Course(
-      id: 'c3',
-      title: 'Agribusiness & Market Access',
-      level: 'Beginner',
-      topic: 'Business',
-      lessons: 5,
-      image: 'course_agribusiness.jpg'),
-  Course(
-      id: 'c4',
-      title: 'Livestock Management Basics',
-      level: 'Beginner',
-      topic: 'Livestock',
-      lessons: 6,
-      image: 'course_livestock.jpg'),
 ];

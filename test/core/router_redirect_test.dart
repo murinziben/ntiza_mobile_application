@@ -91,13 +91,11 @@ void main() {
       expect(_go('/farmer/bookings', session: _verified, me: _user(Role.farmer)), isNull);
       expect(_go('/owner/equipment/new', session: _verified, me: _user(Role.owner)), isNull);
       expect(_go('/owner', session: _verified, me: _user(Role.agent)), '/agent');
-      expect(_go('/notifications', session: _verified, me: _user(Role.expert)), isNull);
+      expect(_go('/notifications', session: _verified, me: _user(Role.agent)), isNull);
       expect(_go('/equipment/eq1', session: _verified, me: _user(Role.farmer)), isNull);
     });
-    test('the public /experts page is not the /expert role area', () {
-      expect(_go('/experts'), isNull);
-      expect(_go('/experts', session: _verified, me: _user(Role.farmer)), isNull);
-      expect(_go('/expert', session: _verified, me: _user(Role.farmer)), '/farmer');
+    test('a path that only shares a prefix with a role area is not part of it', () {
+      expect(_go('/farmers', session: _verified, me: _user(Role.owner)), isNull);
     });
   });
 }

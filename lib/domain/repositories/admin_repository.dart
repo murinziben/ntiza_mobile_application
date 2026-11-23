@@ -1,13 +1,11 @@
 import '../entities/agent_client.dart';
 import '../entities/app_user.dart';
-import '../entities/dispute.dart';
 
-/// Back-office operations: users, applications, disputes and demo data.
+/// Back-office operations: users, applications and demo data.
 abstract class AdminRepository {
   Stream<List<AppUser>> watchUsers();
 
-  /// Approve or reject a partner application. Approving an expert also
-  /// creates their `experts/{uid}` document.
+  /// Approve or reject a partner application.
   Future<void> decideApplication(AppUser user, {required bool approve});
 
   Future<void> setUserStatus(String uid, String status);
@@ -15,13 +13,7 @@ abstract class AdminRepository {
   /// Removes the profile document of another user.
   Future<void> deleteUser(String uid);
 
-  Stream<List<Dispute>> watchDisputes();
-  Stream<List<Dispute>> watchDisputesRaisedBy(String uid);
-  Future<void> createDispute(Dispute dispute);
-  Future<void> resolveDispute(String id, String resolution);
-  Future<void> deleteDispute(String id);
-
-  /// Loads sample equipment, experts, courses and users.
+  /// Loads sample equipment and users.
   Future<void> seedDemoData();
 }
 

@@ -8,7 +8,8 @@ import '../../widgets/location_fields.dart';
 import '../../widgets/ui.dart';
 import 'widgets.dart';
 
-const _types = <(String, IconData)>[
+/// Equipment categories shown on the marketplace and the home screen.
+const marketplaceTypes = <(String, IconData)>[
   ('All', Icons.apps_rounded),
   ('Tractor', Icons.agriculture_outlined),
   ('Harvester', Icons.grass_rounded),
@@ -20,7 +21,8 @@ const _types = <(String, IconData)>[
 const _allDistricts = 'All locations';
 
 // Ephemeral filter state lives in providers, not in widget State.
-final _typeProvider = StateProvider.autoDispose<String>((ref) => 'All');
+/// Not auto-disposed so the home screen can preset it before opening the marketplace.
+final marketplaceTypeProvider = StateProvider<String>((ref) => 'All');
 final _queryProvider = StateProvider.autoDispose<String>((ref) => '');
 
 /// Starts on the district saved in Settings, but can be changed here.
@@ -73,7 +75,7 @@ class MarketplaceScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final type = ref.watch(_typeProvider);
+    final type = ref.watch(marketplaceTypeProvider);
     final district = ref.watch(_districtProvider);
     final sector = ref.watch(_sectorProvider);
     final q = ref.watch(_queryProvider).trim().toLowerCase();
@@ -83,7 +85,7 @@ class MarketplaceScreen extends ConsumerWidget {
     final filtered = type != 'All' || locationFiltered || priceFiltered || q.isNotEmpty;
 
     void clear() {
-      ref.read(_typeProvider.notifier).state = 'All';
+      ref.read(marketplaceTypeProvider.notifier).state = 'All';
       ref.read(_districtProvider.notifier).state = _allDistricts;
       ref.read(_sectorProvider.notifier).state = '';
       ref.read(_priceProvider.notifier).state = _anyPrice;
@@ -118,9 +120,9 @@ class MarketplaceScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 CategoryTiles(
-                  items: _types,
+                  items: marketplaceTypes,
                   selected: type,
-                  onSelected: (v) => ref.read(_typeProvider.notifier).state = v,
+                  onSelected: (v) => ref.read(marketplaceTypeProvider.notifier).state = v,
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),

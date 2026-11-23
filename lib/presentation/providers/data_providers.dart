@@ -4,10 +4,7 @@ import '../../domain/entities/agent_client.dart';
 import '../../domain/entities/app_notification.dart';
 import '../../domain/entities/app_user.dart';
 import '../../domain/entities/booking.dart';
-import '../../domain/entities/course.dart';
-import '../../domain/entities/dispute.dart';
 import '../../domain/entities/equipment.dart';
-import '../../domain/entities/expert.dart';
 import '../controllers/settings_controller.dart';
 import 'dependencies.dart';
 
@@ -55,32 +52,6 @@ final equipmentByIdProvider = Provider.family<Equipment?, String>((ref, id) {
   return null;
 });
 
-final expertsProvider = StreamProvider<List<Expert>>(
-  (ref) => ref.watch(catalogRepositoryProvider).watchExperts(),
-);
-
-/// The signed-in expert's own profile, if one exists.
-final myExpertProvider = Provider<Expert?>((ref) {
-  final uid = ref.watch(currentUidProvider);
-  final all = ref.watch(expertsProvider).valueOrNull ?? const <Expert>[];
-  for (final x in all) {
-    if (x.id == uid) return x;
-  }
-  return null;
-});
-
-final expertByIdProvider = Provider.family<Expert?, String>((ref, id) {
-  final all = ref.watch(expertsProvider).valueOrNull ?? const <Expert>[];
-  for (final x in all) {
-    if (x.id == id) return x;
-  }
-  return null;
-});
-
-final coursesProvider = StreamProvider<List<Course>>(
-  (ref) => ref.watch(catalogRepositoryProvider).watchCourses(),
-);
-
 // ---- bookings --------------------------------------------------------------
 
 /// Bookings made by the signed-in farmer.
@@ -90,7 +61,7 @@ final bookingsProvider = StreamProvider<List<Booking>>((ref) {
   return ref.watch(bookingRepositoryProvider).watchForFarmer(uid);
 });
 
-/// Bookings assigned to the signed-in owner or expert.
+/// Bookings assigned to the signed-in owner.
 final providerBookingsProvider = StreamProvider<List<Booking>>((ref) {
   final uid = ref.watch(currentUidProvider);
   if (uid == null) return Stream.value(const <Booking>[]);
@@ -138,18 +109,6 @@ final unreadCountProvider = Provider<int>((ref) {
 final allUsersProvider = StreamProvider<List<AppUser>>(
   (ref) => ref.watch(adminRepositoryProvider).watchUsers(),
 );
-
-/// Admin: every dispute, newest first.
-final disputesProvider = StreamProvider<List<Dispute>>(
-  (ref) => ref.watch(adminRepositoryProvider).watchDisputes(),
-);
-
-/// Disputes raised by the signed-in user.
-final myDisputesProvider = StreamProvider<List<Dispute>>((ref) {
-  final uid = ref.watch(currentUidProvider);
-  if (uid == null) return Stream.value(const <Dispute>[]);
-  return ref.watch(adminRepositoryProvider).watchDisputesRaisedBy(uid);
-});
 
 /// The signed-in agent's clients.
 final agentClientsProvider = StreamProvider<List<AgentClient>>((ref) {

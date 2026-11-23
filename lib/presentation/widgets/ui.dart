@@ -230,11 +230,7 @@ class StatusChip extends StatelessWidget {
         .contains(s)) {
       bg = AppColors.amberBg;
       fg = AppColors.amberText;
-    } else if (s == 'expert') {
-      bg = AppColors.purpleBg;
-      fg = AppColors.purple;
-    } else if (['cancelled', 'rejected', 'suspended', 'disputed', 'overdue', 'fully booked']
-        .contains(s)) {
+    } else if (['cancelled', 'rejected', 'suspended', 'overdue', 'fully booked'].contains(s)) {
       bg = AppColors.dangerBg;
       fg = AppColors.danger;
     }
@@ -297,14 +293,28 @@ class InitialsAvatar extends StatelessWidget {
   }
 }
 
+/// Every full-size button is 48dp tall (the minimum comfortable tap target), so
+/// buttons look the same on every screen. The `height` argument is kept only so
+/// older call sites still compile.
+const double _buttonHeight = 48;
+
 class PrimaryButton extends StatelessWidget {
   const PrimaryButton(this.label,
-      {super.key, this.onPressed, this.height = 50, this.icon, this.expand = true});
+      {super.key,
+      this.onPressed,
+      this.height = 50,
+      this.icon,
+      this.expand = true,
+      this.compact = false});
   final String label;
   final VoidCallback? onPressed;
   final double height;
   final IconData? icon;
   final bool expand;
+
+  /// A smaller 40dp button for use inside cards. Material still pads its tap
+  /// target to 48dp, so it stays easy to hit.
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -313,9 +323,11 @@ class PrimaryButton extends StatelessWidget {
       style: FilledButton.styleFrom(
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
-        minimumSize: Size(expand ? double.infinity : 0, height < 48 ? 48 : height),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.button)),
-        textStyle: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600),
+        minimumSize: Size(expand ? double.infinity : 0, compact ? 40 : _buttonHeight),
+        padding: compact ? const EdgeInsets.symmetric(horizontal: 18) : null,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(compact ? 12 : AppRadius.button)),
+        textStyle: TextStyle(fontSize: compact ? 14 : 15, fontWeight: FontWeight.w600),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -333,12 +345,20 @@ class PrimaryButton extends StatelessWidget {
 
 class OutlineButtonX extends StatelessWidget {
   const OutlineButtonX(this.label,
-      {super.key, this.onPressed, this.height = 50, this.expand = true, this.color});
+      {super.key,
+      this.onPressed,
+      this.height = 50,
+      this.expand = true,
+      this.color,
+      this.compact = false});
   final String label;
   final VoidCallback? onPressed;
   final double height;
   final bool expand;
   final Color? color;
+
+  /// A smaller 40dp button for use inside cards (tap target stays 48dp).
+  final bool compact;
 
   @override
   Widget build(BuildContext context) => OutlinedButton(
@@ -347,9 +367,11 @@ class OutlineButtonX extends StatelessWidget {
           backgroundColor: Colors.white,
           foregroundColor: color ?? AppColors.ink,
           side: const BorderSide(color: AppColors.border),
-          minimumSize: Size(expand ? double.infinity : 0, height < 48 ? 48 : height),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.button)),
-          textStyle: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600),
+          minimumSize: Size(expand ? double.infinity : 0, compact ? 40 : _buttonHeight),
+          padding: compact ? const EdgeInsets.symmetric(horizontal: 18) : null,
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(compact ? 12 : AppRadius.button)),
+          textStyle: TextStyle(fontSize: compact ? 14 : 15, fontWeight: FontWeight.w600),
         ),
         child: Text(label),
       );
@@ -374,10 +396,10 @@ class SoftButton extends StatelessWidget {
           child: Container(
             constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
             alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(label,
                 textAlign: TextAlign.center,
-                style: TextStyle(color: fg, fontWeight: FontWeight.w700, fontSize: 14.5)),
+                style: TextStyle(color: fg, fontWeight: FontWeight.w700, fontSize: 14)),
           ),
         ),
       );
@@ -847,23 +869,6 @@ class _SkeletonListState extends State<SkeletonList> with SingleTickerProviderSt
             ),
     );
   }
-}
-
-class RatingLine extends StatelessWidget {
-  const RatingLine(this.rating, this.suffix, {super.key});
-  final double rating;
-  final String suffix;
-
-  @override
-  Widget build(BuildContext context) => Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.star, size: 16, color: AppColors.amber),
-          const SizedBox(width: 4),
-          Text('${rating.toStringAsFixed(1)} · $suffix',
-              style: const TextStyle(fontSize: 13.5, color: AppColors.muted)),
-        ],
-      );
 }
 
 class StatTile extends StatelessWidget {

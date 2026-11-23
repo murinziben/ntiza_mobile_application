@@ -63,7 +63,7 @@ class SettingsScreen extends ConsumerWidget {
               activeTrackColor: AppColors.primary,
               title: const Text('Show notifications',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-              subtitle: const Text('Booking, payment and training alerts',
+              subtitle: const Text('Booking and payment alerts',
                   style: TextStyle(fontSize: 13.5, color: AppColors.muted)),
               onChanged: controller.setNotificationsEnabled,
             ),

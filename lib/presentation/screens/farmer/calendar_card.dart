@@ -49,7 +49,7 @@ class CalendarCard extends StatelessWidget {
   final ValueChanged<DateTime> onMonthChanged;
   final ValueChanged<DateTime> onSelected;
 
-  /// Extra rule for selectable days (e.g. an expert's working days).
+  /// Extra rule for selectable days (e.g. days the owner has blocked).
   final bool Function(DateTime day)? isEnabled;
 
   /// Days to flag as already taken (shown in red, struck through, with a legend).

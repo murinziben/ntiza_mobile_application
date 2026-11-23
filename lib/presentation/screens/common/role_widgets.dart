@@ -7,6 +7,7 @@ import '../../../domain/entities/entities.dart';
 import '../../widgets/ui.dart';
 import '../../providers/providers.dart';
 import '../public/public_shell.dart';
+import 'support.dart';
 
 /// Bottom-nav shell shared by every role.
 class RoleShell extends StatelessWidget {
@@ -83,15 +84,28 @@ class StatGrid extends StatelessWidget {
   final List<StatSpec> stats;
 
   Widget _card(StatSpec s) => AppCard(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        padding: const EdgeInsets.all(12),
+        child: Row(
           children: [
-            IconTile(s.icon, bg: s.bg, fg: s.fg, size: 44, radius: 13),
-            const SizedBox(height: 14),
-            Text(s.value, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 2),
-            Text(s.label, style: const TextStyle(fontSize: 14.5, color: AppColors.muted)),
+            IconTile(s.icon, bg: s.bg, fg: s.fg, size: 40, radius: 12),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(s.value,
+                        style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800)),
+                  ),
+                  Text(s.label,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12.5, height: 1.2, color: AppColors.muted)),
+                ],
+              ),
+            ),
           ],
         ),
       );
@@ -100,11 +114,11 @@ class StatGrid extends StatelessWidget {
   Widget build(BuildContext context) => Column(
         children: [
           for (var i = 0; i < stats.length; i += 2) ...[
-            if (i > 0) const SizedBox(height: 14),
+            if (i > 0) const SizedBox(height: 10),
             Row(
               children: [
                 Expanded(child: _card(stats[i])),
-                const SizedBox(width: 14),
+                const SizedBox(width: 10),
                 Expanded(child: i + 1 < stats.length ? _card(stats[i + 1]) : const SizedBox()),
               ],
             ),
@@ -185,17 +199,10 @@ class BarCard extends StatelessWidget {
   }
 }
 
-/// Green balance card with a white action button.
+/// Green balance card.
 class BalanceCard extends StatelessWidget {
-  const BalanceCard(
-      {super.key,
-      required this.label,
-      required this.amount,
-      required this.note,
-      required this.button,
-      this.onTap});
-  final String label, amount, note, button;
-  final VoidCallback? onTap;
+  const BalanceCard({super.key, required this.label, required this.amount, required this.note});
+  final String label, amount, note;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -213,8 +220,6 @@ class BalanceCard extends StatelessWidget {
                     color: Colors.white, fontSize: 34, fontWeight: FontWeight.w800)),
             const SizedBox(height: 4),
             Text(note, style: const TextStyle(color: Colors.white, fontSize: 14)),
-            const SizedBox(height: 14),
-            OutlineButtonX(button, expand: false, height: 46, onPressed: onTap),
           ],
         ),
       );
@@ -293,9 +298,9 @@ class RequestCard extends StatelessWidget {
             const SizedBox(height: 14),
             Row(
               children: [
-                Expanded(child: OutlineButtonX(declineLabel, height: 46, onPressed: onDecline)),
+                Expanded(child: OutlineButtonX(declineLabel, compact: true, onPressed: onDecline)),
                 const SizedBox(width: 12),
-                Expanded(child: PrimaryButton(acceptLabel, height: 46, onPressed: onAccept)),
+                Expanded(child: PrimaryButton(acceptLabel, compact: true, onPressed: onAccept)),
               ],
             ),
           ],
@@ -423,36 +428,26 @@ class RowSpec {
   final Color bg, fg, amountColor;
 }
 
-/// Generic profile screen for non-farmer roles.
+/// Profile screen shared by every signed-in role.
 class RoleProfileScreen extends ConsumerWidget {
   const RoleProfileScreen({super.key});
-
-  void _showHelp(BuildContext context) => showDialog<void>(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text('Help & support'),
-          content: const Text(
-              'Need a hand? E-mail support@ntiza.app and the NTIZA team will reply within one working day.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close'),
-            ),
-          ],
-        ),
-      );
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final me = ref.watch(profileProvider).valueOrNull;
     final initials = initialsOf(me?.name ?? 'N');
     final name = me?.name ?? '';
-    final subtitle = '${me?.role.label ?? ''} · ${me?.district ?? ''}';
+    final subtitle = [
+      me?.role.label ?? '',
+      me?.district ?? '',
+      if (me?.role == Role.farmer && (me?.phone ?? '').isNotEmpty) me!.phone,
+    ].where((p) => p.isNotEmpty).join(' · ');
     final busy = ref.watch(authControllerProvider).busy;
     final rows = <(IconData, String, VoidCallback)>[
       (Icons.person_outline, 'Personal information', () => context.push('/profile/edit')),
+      (Icons.notifications_none, 'Notifications', () => context.push('/notifications')),
       (Icons.settings_outlined, 'Settings', () => context.push('/settings')),
-      (Icons.help_outline, 'Help & support', () => _showHelp(context)),
+      (Icons.help_outline, 'Help & support', () => showHelpDialog(context)),
     ];
     return Scaffold(
       appBar: const TopBar('Profile', back: false),
@@ -468,7 +463,9 @@ class RoleProfileScreen extends ConsumerWidget {
               child: Text(name, style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800))),
           const SizedBox(height: 4),
           Center(
-              child: Text(subtitle, style: const TextStyle(fontSize: 14, color: AppColors.muted))),
+              child: Text(subtitle,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 14, color: AppColors.muted))),
           const SizedBox(height: 22),
           AppCard(
             padding: EdgeInsets.zero,

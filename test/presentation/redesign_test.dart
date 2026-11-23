@@ -161,8 +161,8 @@ void main() {
       expect(tester.getSemantics(find.bySemanticsLabel('Equipment')),
           isSemantics(label: 'Equipment', isButton: true, isSelected: true));
       handle.dispose();
-      await tester.tap(find.text('Experts'));
-      expect(tapped, 2);
+      await tester.tap(find.text('Account'));
+      expect(tapped, 3);
     });
   });
 

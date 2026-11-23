@@ -2,13 +2,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/errors/app_exception.dart';
 import '../../domain/entities/equipment.dart';
-import '../../domain/entities/expert.dart';
 import '../../domain/repositories/image_storage.dart';
 import '../providers/data_providers.dart';
 import '../providers/dependencies.dart';
 import 'action_notifier.dart';
 
-/// Create / update / delete for equipment, plus expert availability.
+/// Create / update / delete for equipment.
 class CatalogController extends ActionNotifier {
   /// Saves a new machine for the signed-in owner (blank [existing]) or
   /// updates [existing]. [priceText] is the raw text of the price field.
@@ -70,9 +69,6 @@ class CatalogController extends ActionNotifier {
 
   Future<ActionResult<void>> setBlockedDays(Equipment equipment, Iterable<DateTime> days) =>
       run(() => ref.read(catalogUseCasesProvider).setBlockedDays(equipment, days));
-
-  Future<ActionResult<void>> saveAvailability(Expert expert) =>
-      run(() => ref.read(catalogUseCasesProvider).saveAvailability(expert));
 }
 
 final catalogControllerProvider =

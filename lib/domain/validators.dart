@@ -67,12 +67,6 @@ class Validators {
   /// Parses `25,000` or `25 000` into 25000; `null` if there are no digits.
   static int? parseAmount(String? value) =>
       int.tryParse((value ?? '').replaceAll(RegExp(r'[^0-9]'), ''));
-
-  static String? reason(String? value) {
-    final v = value?.trim() ?? '';
-    if (v.length < 10) return 'Please describe the problem (at least 10 characters).';
-    return null;
-  }
 }
 
 /// Normalises a phone number to the `07XXXXXXXX` form used throughout the app.

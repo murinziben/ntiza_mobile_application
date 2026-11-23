@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../domain/entities/entities.dart';
-import '../../providers/providers.dart';
 import '../../widgets/ui.dart';
 
 /// Shows a spinner while loading and a friendly message on error, otherwise
@@ -18,11 +17,6 @@ Widget asyncSection<T>(AsyncValue<T> value, Widget Function(T data) data) => val
       error: (_, __) => const EmptyState('Could not load data',
           message: 'Check your connection and try again.', icon: Icons.wifi_off_rounded),
     );
-
-/// Opens the expert booking flow, or the login screen for guests.
-void goBookExpert(BuildContext context, WidgetRef ref, String expertId) {
-  context.push(ref.read(signedInProvider) ? '/farmer/book-expert/$expertId' : '/login');
-}
 
 /// Marketplace card for one machine.
 class EquipmentTile extends StatelessWidget {
@@ -39,20 +33,20 @@ class EquipmentTile extends StatelessWidget {
           children: [
             Stack(
               children: [
-                AssetPhoto(item.image, height: compact ? 118 : 168),
+                AssetPhoto(item.image, height: compact ? 110 : 150),
                 Positioned(left: 12, top: 12, child: StatusChip(item.availabilityLabel)),
               ],
             ),
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(item.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 6),
+                      style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 4),
                   Row(children: [
                     const Icon(Icons.location_on_outlined, size: 17, color: AppColors.muted),
                     const SizedBox(width: 4),
@@ -79,7 +73,7 @@ class EquipmentTile extends StatelessWidget {
                       ),
                     ]),
                   ],
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -88,7 +82,7 @@ class EquipmentTile extends StatelessWidget {
                           TextSpan(
                               text: rwf(item.price),
                               style: const TextStyle(
-                                  fontSize: 20,
+                                  fontSize: 18,
                                   fontWeight: FontWeight.w800,
                                   color: AppColors.primaryDark)),
                           TextSpan(
@@ -98,9 +92,9 @@ class EquipmentTile extends StatelessWidget {
                       ),
                       if (!compact) ...[
                         const SizedBox(width: 8),
-                        PrimaryButton('Book Now',
+                        PrimaryButton('Book',
                             expand: false,
-                            height: 48,
+                            compact: true,
                             onPressed: () => context.push('/equipment/${item.id}')),
                       ],
                     ],
@@ -113,98 +107,58 @@ class EquipmentTile extends StatelessWidget {
       );
 }
 
-/// Card for one agricultural expert. Pass [onBook] to show the Book button.
-class ExpertCard extends StatelessWidget {
-  const ExpertCard({super.key, required this.expert, this.onBook});
-  final Expert expert;
-  final VoidCallback? onBook;
+/// Compact horizontal card for one machine (photo left, details right).
+class EquipmentRow extends StatelessWidget {
+  const EquipmentRow({super.key, required this.item});
+  final Equipment item;
 
   @override
   Widget build(BuildContext context) => AppCard(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(10),
+        onTap: () => context.push('/equipment/${item.id}'),
         child: Row(
           children: [
-            InitialsAvatar(initialsOf(expert.name), size: 62),
-            const SizedBox(width: 14),
+            AssetPhoto(item.image, width: 88, height: 88, radius: 12),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(expert.name,
-                      style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 2),
-                  Text(expert.field,
-                      style: const TextStyle(
-                          fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.primaryDark)),
+                  Text(item.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 3),
-                  RatingLine(expert.rating, '${expert.years} years experience'),
-                  const SizedBox(height: 3),
-                  Text(
-                    expert.accepting
-                        ? '${rwf(expert.fee)} / ${expert.sessionMinutes} min'
-                        : 'Not taking new consultations',
-                    style: TextStyle(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w600,
-                        color: expert.accepting ? AppColors.body : AppColors.danger),
-                  ),
+                  Row(children: [
+                    const Icon(Icons.location_on_outlined, size: 15, color: AppColors.muted),
+                    const SizedBox(width: 3),
+                    Expanded(
+                      child: Text(item.place,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 13, color: AppColors.muted)),
+                    ),
+                  ]),
+                  const SizedBox(height: 6),
+                  Text.rich(TextSpan(children: [
+                    TextSpan(
+                        text: rwf(item.price),
+                        style: const TextStyle(
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.primaryDark)),
+                    TextSpan(
+                        text: ' / ${item.unit}',
+                        style: const TextStyle(fontSize: 12.5, color: AppColors.muted)),
+                  ])),
                 ],
               ),
             ),
-            if (onBook != null) ...[
-              const SizedBox(width: 8),
-              SoftButton('Book', onPressed: expert.accepting ? onBook : null),
-            ],
+            const SizedBox(width: 6),
+            StatusChip(item.availabilityLabel),
           ],
         ),
       );
-}
-
-/// Card for one training course.
-class CourseCard extends StatelessWidget {
-  const CourseCard({super.key, required this.course, this.onTap});
-  final Course course;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final intermediate = course.level == 'Intermediate';
-    return AppCard(
-      padding: EdgeInsets.zero,
-      onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          AssetPhoto(course.image, height: 160),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(spacing: 8, runSpacing: 8, children: [
-                  Pill(course.level,
-                      big: true,
-                      bg: intermediate ? AppColors.blueBg : AppColors.green100,
-                      fg: intermediate ? AppColors.blue : AppColors.primaryDark),
-                  Pill(course.topic, big: true, bg: AppColors.neutral, fg: AppColors.body),
-                ]),
-                const SizedBox(height: 12),
-                Text(course.title,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 8),
-                Row(children: [
-                  const Icon(Icons.play_arrow, size: 20, color: AppColors.muted),
-                  const SizedBox(width: 6),
-                  Text('${course.lessons} lessons · Free',
-                      style: const TextStyle(fontSize: 14, color: AppColors.muted)),
-                ]),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 /// "Booked: 23 Nov, 25 Nov +2 more" — taken days for the machine card.

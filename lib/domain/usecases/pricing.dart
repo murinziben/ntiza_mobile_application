@@ -46,7 +46,7 @@ class BookingPricing {
   /// `4 hours` → 4.
   static int quantityOf(String option) => int.tryParse(option.split(' ').first) ?? 1;
 
-  /// What the owner or expert receives after the platform's commission.
+  /// What the owner receives after the platform's commission.
   static int providerNet(int total) => (total * (1 - platformCommission)).round();
 
   static int agentEarning(int total) => (total * agentCommission).round();

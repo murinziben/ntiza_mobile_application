@@ -10,6 +10,7 @@ import '../../../domain/entities/entities.dart';
 import '../../providers/providers.dart';
 import '../../widgets/ui.dart';
 import 'featured_slider.dart';
+import 'marketplace_screen.dart';
 import 'widgets.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -18,33 +19,30 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final equipment = ref.watch(equipmentProvider).valueOrNull ?? const <Equipment>[];
-    final experts = ref.watch(expertsProvider).valueOrNull ?? const <Expert>[];
-    final courses = ref.watch(coursesProvider).valueOrNull ?? const <Course>[];
     final signedIn = ref.watch(signedInProvider);
+    final available = [
+      for (final e in equipment)
+        if (e.bookable && e.availability == Availability.freeToday) e
+    ].take(4).toList();
 
     return Scaffold(
       body: ListView(
         padding: EdgeInsets.zero,
         children: [
           _Hero(signedIn: signedIn),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _Quick('Equipment', Icons.agriculture_outlined, AppColors.green100,
-                    AppColors.primaryDark, () => context.go('/equipment')),
-                _Quick('Experts', Icons.groups_2_outlined, AppColors.blueBg, AppColors.blue,
-                    () => context.go('/experts')),
-                _Quick('Training', Icons.menu_book_outlined, AppColors.amberBg, AppColors.amber,
-                    () => context.go('/training')),
-                _Quick('Agents', Icons.smartphone_outlined, AppColors.purpleBg, AppColors.purple,
-                    () => context.push('/login')),
-              ],
-            ),
+          CategoryTiles(
+            items: [
+              for (final t in marketplaceTypes)
+                if (t.$1 != 'All') t
+            ],
+            selected: '',
+            onSelected: (type) {
+              ref.read(marketplaceTypeProvider.notifier).state = type;
+              context.go('/equipment');
+            },
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 26, 16, 14),
+            padding: const EdgeInsets.fromLTRB(16, 18, 16, 12),
             child: SectionHeader('Featured Equipment',
                 action: 'See all', onAction: () => context.go('/equipment')),
           ),
@@ -54,72 +52,45 @@ class HomeScreen extends ConsumerWidget {
                 message: 'New machines will appear here.',
                 icon: Icons.agriculture_outlined,
                 padding: 16),
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 28, 16, 14),
-            child: Text('How NTIZA Works',
-                style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700)),
-          ),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: AppCard(
-              padding: EdgeInsets.fromLTRB(16, 18, 16, 8),
+          if (available.isNotEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+              child: SectionHeader('Available now',
+                  action: 'See all', onAction: () => context.go('/equipment')),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
-                children: <Widget>[
-                  _Step(1, 'Farmer Requests', 'Submit a request for equipment or an expert'),
-                  _Step(2, 'Platform Matches', 'We connect you with an available provider'),
-                  _Step(3, 'Payment Processed', 'Pay securely with MTN MoMo or Airtel Money'),
-                  _Step(4, 'Service Delivered', 'Equipment or expert arrives at your farm'),
+                children: [
+                  for (final e in available) ...[
+                    EquipmentRow(item: e),
+                    const SizedBox(height: 10),
+                  ],
                 ],
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 28, 16, 14),
-            child: SectionHeader('Agricultural Experts',
-                action: 'See all', onAction: () => context.go('/experts')),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(
-              children: [
-                for (final e in experts.take(3)) ...[
-                  ExpertCard(expert: e, onBook: () => goBookExpert(context, ref, e.id)),
-                  const SizedBox(height: 12),
-                ],
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
-            child: SectionHeader('Training & Education',
-                action: 'See all', onAction: () => context.go('/training')),
-          ),
-          if (courses.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: CourseCard(course: courses.first, onTap: () => context.go('/training')),
-            ),
+          ],
           if (!signedIn)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 22, 16, 28),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
               child: Container(
-                padding: const EdgeInsets.all(22),
+                padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
                   color: AppColors.primaryDark,
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(20),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text('Ready to grow with NTIZA?',
                         style: TextStyle(
-                            color: Colors.white, fontSize: 21, fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 10),
-                    const Text('Join thousands of farmers, owners and experts across Rwanda.',
-                        style: TextStyle(color: Colors.white, fontSize: 16, height: 1.45)),
-                    const SizedBox(height: 18),
+                            color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 6),
+                    const Text('Join thousands of farmers and equipment owners across Rwanda.',
+                        style: TextStyle(color: Colors.white, fontSize: 14.5, height: 1.4)),
+                    const SizedBox(height: 14),
                     OutlineButtonX('Create Free Account',
-                        expand: false, onPressed: () => context.push('/register')),
+                        expand: false, compact: true, onPressed: () => context.push('/register')),
                   ],
                 ),
               ),
@@ -130,7 +101,7 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-/// Photo header with the headline, two calls to action and a bell/settings button.
+/// Photo header with the headline, a search bar and a bell/settings button.
 class _Hero extends StatelessWidget {
   const _Hero({required this.signedIn});
   final bool signedIn;
@@ -141,7 +112,7 @@ class _Hero extends StatelessWidget {
       child: Column(
         children: [
           SizedBox(
-            height: 430,
+            height: 270,
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -188,27 +159,16 @@ class _Hero extends StatelessWidget {
                           ],
                         ),
                         const Spacer(),
-                        const Text('Connecting Farmers to Agricultural Equipment and Experts',
+                        const Text('Hire farm equipment, near you',
                             style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 27,
+                                fontSize: 25,
                                 height: 1.2,
                                 fontWeight: FontWeight.w700)),
-                        const SizedBox(height: 10),
-                        const Text(
-                            'Access mechanization services, agricultural expertise, and training through one platform.',
-                            style: TextStyle(color: Colors.white, fontSize: 16, height: 1.4)),
-                        const SizedBox(height: 16),
-                        Row(children: [
-                          Expanded(
-                              child: PrimaryButton('Browse Equipment',
-                                  onPressed: () => context.go('/equipment'))),
-                          const SizedBox(width: 12),
-                          Expanded(
-                              child: OutlineButtonX('Book Services',
-                                  onPressed: () => context.push(signedIn ? '/experts' : '/login'))),
-                        ]),
-                        const SizedBox(height: 50),
+                        const SizedBox(height: 6),
+                        const Text('Tractors, harvesters, pumps and more from trusted owners.',
+                            style: TextStyle(color: Colors.white, fontSize: 14.5, height: 1.4)),
+                        const SizedBox(height: 44),
                       ],
                     ),
                   ),
@@ -229,7 +189,7 @@ class _Hero extends StatelessWidget {
                 ),
                 child: Builder(
                   builder: (context) => SearchField(
-                      hint: 'Search tractors, experts, courses…',
+                      hint: 'Search tractors, harvesters, pumps…',
                       onTap: () => context.go('/equipment')),
                 ),
               ),
@@ -237,65 +197,4 @@ class _Hero extends StatelessWidget {
           ),
         ],
       ));
-}
-
-/// Round shortcut button on the home screen.
-class _Quick extends StatelessWidget {
-  const _Quick(this.label, this.icon, this.bg, this.fg, this.onTap);
-  final String label;
-  final IconData icon;
-  final Color bg, fg;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Padding(
-          padding: const EdgeInsets.all(4),
-          child: Column(
-            children: [
-              IconTile(icon, bg: bg, fg: fg, size: 62, radius: 20),
-              const SizedBox(height: 8),
-              Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-            ],
-          ),
-        ),
-      );
-}
-
-class _Step extends StatelessWidget {
-  const _Step(this.n, this.title, this.sub);
-  final int n;
-  final String title, sub;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 18),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 28,
-              height: 28,
-              alignment: Alignment.center,
-              decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
-              child: Text('$n',
-                  style: const TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 2),
-                  Text(sub, style: const TextStyle(fontSize: 13.5, color: AppColors.muted)),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
 }

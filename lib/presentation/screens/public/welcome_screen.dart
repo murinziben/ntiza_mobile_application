@@ -44,7 +44,7 @@ class WelcomeScreen extends ConsumerWidget {
                       children: [
                         const LogoLockup(light: true, size: 48),
                         const SizedBox(height: 28),
-                        const Text('Connecting Farmers to Agricultural Equipment and Experts',
+                        const Text('Connecting Farmers to Agricultural Equipment',
                             style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 32,
@@ -52,7 +52,7 @@ class WelcomeScreen extends ConsumerWidget {
                                 fontWeight: FontWeight.w700)),
                         const SizedBox(height: 18),
                         const Text(
-                            'Book tractors, harvesters and certified agri-experts, pay with Mobile Money and learn new skills — all in one app.',
+                            'Book tractors, harvesters and more, and pay with Mobile Money — all in one app.',
                             style: TextStyle(color: Colors.white, fontSize: 17, height: 1.45)),
                         const SizedBox(height: 22),
                         Row(children: [

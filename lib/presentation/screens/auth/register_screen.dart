@@ -18,9 +18,8 @@ final _placeProvider = StateProvider.autoDispose<Place>((ref) => placeFrom(
 
 /// The four roles a person can sign up as, with a one-line description.
 const registerRoles = <(Role, String, IconData)>[
-  (Role.farmer, 'Book equipment & experts, take training', Icons.eco_outlined),
+  (Role.farmer, 'Book machines for your farm', Icons.eco_outlined),
   (Role.owner, 'List machines and earn from bookings', Icons.agriculture_outlined),
-  (Role.expert, 'Offer paid consultations', Icons.groups_2_outlined),
   (Role.agent, 'Book on behalf of farmers, earn commission', Icons.smartphone_outlined),
 ];
 

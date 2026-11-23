@@ -15,7 +15,6 @@ const users = [
   ['farmer4@ntiza.test', 'Farmer Four', 'farmer', 'Rubavu', 'Gisenyi'],
   ['owner@ntiza.test', 'Test Owner', 'owner', 'Gasabo', 'Remera'],
   ['owner2@ntiza.test', 'Owner Two', 'owner', 'Huye', 'Ngoma'],
-  ['expert@ntiza.test', 'Dr. Test Expert', 'expert', 'Gasabo', 'Remera'],
   ['agent@ntiza.test', 'Test Agent', 'agent', 'Gasabo', 'Remera'],
   ['admin@ntiza.test', 'Test Admin', 'admin', 'Gasabo', 'Remera'],
 ];

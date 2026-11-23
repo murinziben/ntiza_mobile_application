@@ -16,7 +16,6 @@ import '../public/public_shell.dart';
 const agentNav = [
   NavItem('Home', Icons.grid_view_outlined),
   NavItem('Farmers', Icons.groups_2_outlined),
-  NavItem('New Booking', Icons.add),
   NavItem('Commission', Icons.payments_outlined),
   NavItem('Profile', Icons.person_outline),
 ];
@@ -97,14 +96,14 @@ class AgentDashboard extends ConsumerWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(22),
               child: SizedBox(
-                height: 140,
+                height: 112,
                 child: Row(
                   children: [
                     Expanded(
                       flex: 6,
                       child: Container(
                         color: AppColors.primaryDark,
-                        padding: const EdgeInsets.all(18),
+                        padding: const EdgeInsets.all(14),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -118,17 +117,17 @@ class AgentDashboard extends ConsumerWidget {
                               child: Text(rwf(_pendingCommission(bookings)),
                                   style: const TextStyle(
                                       color: Colors.white,
-                                      fontSize: 27,
+                                      fontSize: 24,
                                       fontWeight: FontWeight.w800)),
                             ),
                             const SizedBox(height: 4),
-                            const Text('Paid out to Mobile Money',
+                            const Text('Earned on completed bookings',
                                 style: TextStyle(color: Colors.white, fontSize: 13.5)),
                           ],
                         ),
                       ),
                     ),
-                    const Expanded(flex: 5, child: AssetPhoto('hero_villagers.jpg', height: 140)),
+                    const Expanded(flex: 5, child: AssetPhoto('hero_villagers.jpg', height: 112)),
                   ],
                 ),
               ),
@@ -146,7 +145,7 @@ class AgentDashboard extends ConsumerWidget {
             ]),
             const SizedBox(height: 16),
             PrimaryButton('+  Book for a Farmer',
-                height: 54, onPressed: () => context.go('/agent/new')),
+                height: 54, onPressed: () => context.push('/agent/new')),
             const SizedBox(height: 24),
             sectionTitle('Recent bookings',
                 action: 'Commission', onAction: () => context.go('/agent/commission')),
@@ -289,7 +288,7 @@ class AgentFarmersScreen extends ConsumerWidget {
       action: 'Book',
       onAction: () {
         ref.read(_selectedClientIdProvider.notifier).state = c.id;
-        context.go('/agent/new');
+        context.push('/agent/new');
       },
       tags: [
         _miniAction('Edit', Icons.edit_outlined, () => _openForm(context, existing: c)),
@@ -516,7 +515,7 @@ class _AgentNewBookingScreenState extends ConsumerState<AgentNewBookingScreen> {
 
     if (clients.isEmpty) {
       return Scaffold(
-        appBar: const TopBar('New Booking', back: false),
+        appBar: const TopBar('New Booking'),
         body: ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -600,7 +599,7 @@ class _AgentNewBookingScreenState extends ConsumerState<AgentNewBookingScreen> {
 
     final eq = equipment;
     return Scaffold(
-      appBar: const TopBar('New Booking', back: false),
+      appBar: const TopBar('New Booking'),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -772,7 +771,6 @@ class AgentCommissionScreen extends ConsumerWidget {
             label: 'Commission earned',
             amount: rwf(earned),
             note: '5% of every completed booking',
-            button: 'Paid out via Mobile Money',
           ),
           const SizedBox(height: 16),
           Row(
