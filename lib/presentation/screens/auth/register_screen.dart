@@ -163,7 +163,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 height: 54, onPressed: busy ? null : _submit),
             if (showGoogleSignIn) ...[
               const SizedBox(height: 12),
-              OutlineButtonX('Continue with Google', height: 54, onPressed: busy ? null : _google),
+              OutlineButtonX('Continue with Google',
+                  height: 54, leading: const GoogleLogo(), onPressed: busy ? null : _google),
             ],
           ],
         ),

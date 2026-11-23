@@ -350,12 +350,16 @@ class OutlineButtonX extends StatelessWidget {
       this.height = 50,
       this.expand = true,
       this.color,
-      this.compact = false});
+      this.compact = false,
+      this.leading});
   final String label;
   final VoidCallback? onPressed;
   final double height;
   final bool expand;
   final Color? color;
+
+  /// Optional icon or logo shown before the label (e.g. the Google "G").
+  final Widget? leading;
 
   /// A smaller 40dp button for use inside cards (tap target stays 48dp).
   final bool compact;
@@ -373,7 +377,31 @@ class OutlineButtonX extends StatelessWidget {
               borderRadius: BorderRadius.circular(compact ? 12 : AppRadius.button)),
           textStyle: TextStyle(fontSize: compact ? 14 : 15, fontWeight: FontWeight.w600),
         ),
-        child: Text(label),
+        child: leading == null
+            ? Text(label)
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [leading!, const SizedBox(width: 12), Flexible(child: Text(label))],
+              ),
+      );
+}
+
+/// The Google "G" logo for the "Continue with Google" buttons.
+///
+/// Uses the official asset `assets/images/google_logo.png` (download it from
+/// Google's sign-in branding guidelines). Until that file is added, a neutral
+/// icon is shown so the app still builds and runs.
+class GoogleLogo extends StatelessWidget {
+  const GoogleLogo({super.key, this.size = 20});
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => Image.asset(
+        'assets/images/google_logo.png',
+        width: size,
+        height: size,
+        semanticLabel: 'Google',
+        errorBuilder: (_, __, ___) => Icon(Icons.account_circle_outlined, size: size),
       );
 }
 
