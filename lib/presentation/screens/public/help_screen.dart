@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../widgets/ui.dart';
@@ -52,7 +52,7 @@ class HelpScreen extends StatelessWidget {
 }
 
 class HowStep extends StatelessWidget {
-  const HowStep(this.n, this.title, this.sub);
+  const HowStep(this.n, this.title, this.sub, {super.key});
   final int n;
   final String title, sub;
 

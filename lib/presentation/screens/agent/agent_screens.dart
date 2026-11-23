@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -62,16 +62,6 @@ Future<bool> _confirm(BuildContext context, String title, String message, String
   return ok ?? false;
 }
 
-/// Compact text button with an icon, at least 48dp tall.
-Widget _miniAction(String label, IconData icon, VoidCallback? onTap,
-        {Color color = AppColors.primaryDark}) =>
-    TextButton.icon(
-      onPressed: onTap,
-      style: TextButton.styleFrom(minimumSize: const Size(48, 48), foregroundColor: color),
-      icon: Icon(icon, size: 18),
-      label: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
-    );
-
 // ---- dashboard -----------------------------------------------------------------
 
 /// Agent home: commission summary, stats and the latest bookings.
@@ -95,40 +85,43 @@ class AgentDashboard extends ConsumerWidget {
             const SizedBox(height: 16),
             ClipRRect(
               borderRadius: BorderRadius.circular(22),
-              child: SizedBox(
-                height: 112,
-                child: Row(
-                  children: [
-                    Expanded(
-                      flex: 6,
-                      child: Container(
-                        color: AppColors.primaryDark,
-                        padding: const EdgeInsets.all(14),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text('Pending commission',
-                                style: TextStyle(color: Colors.white, fontSize: 14)),
-                            const SizedBox(height: 4),
-                            FittedBox(
-                              fit: BoxFit.scaleDown,
-                              alignment: Alignment.centerLeft,
-                              child: Text(rwf(_pendingCommission(bookings)),
-                                  style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.w800)),
-                            ),
-                            const SizedBox(height: 4),
-                            const Text('Earned on completed bookings',
-                                style: TextStyle(color: Colors.white, fontSize: 13.5)),
-                          ],
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 112),
+                child: IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        flex: 6,
+                        child: Container(
+                          color: AppColors.primaryDark,
+                          padding: const EdgeInsets.all(14),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text('Pending commission',
+                                  style: TextStyle(color: Colors.white, fontSize: 14)),
+                              const SizedBox(height: 4),
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
+                                child: Text(rwf(_pendingCommission(bookings)),
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.w800)),
+                              ),
+                              const SizedBox(height: 4),
+                              const Text('Earned on completed bookings',
+                                  style: TextStyle(color: Colors.white, fontSize: 13.5)),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                    const Expanded(flex: 5, child: AssetPhoto('hero_villagers.jpg', height: 112)),
-                  ],
+                      const Expanded(flex: 5, child: AssetPhoto('hero_villagers.jpg', height: 112)),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -216,9 +209,9 @@ class AgentFarmersScreen extends ConsumerWidget {
   const AgentFarmersScreen({super.key});
 
   Future<void> _openForm(BuildContext context, {AgentClient? existing}) async {
-    final saved = await showDialog<bool>(
-      context: context,
-      builder: (_) => _ClientDialog(existing: existing),
+    final saved = await context.push<bool>(
+      existing == null ? '/agent/farmers/new' : '/agent/farmers/edit',
+      extra: existing,
     );
     if (saved == true && context.mounted) {
       showToast(context, existing == null ? 'Farmer added.' : 'Farmer updated.');
@@ -290,25 +283,25 @@ class AgentFarmersScreen extends ConsumerWidget {
         ref.read(_selectedClientIdProvider.notifier).state = c.id;
         context.push('/agent/new');
       },
-      tags: [
-        _miniAction('Edit', Icons.edit_outlined, () => _openForm(context, existing: c)),
-        _miniAction('Delete', Icons.delete_outline, () => _delete(context, ref, c),
-            color: AppColors.danger),
+      menu: [
+        PersonMenuItem('Edit', Icons.edit_outlined, () => _openForm(context, existing: c)),
+        PersonMenuItem('Delete', Icons.delete_outline, () => _delete(context, ref, c),
+            danger: true),
       ],
     );
   }
 }
 
-/// Add / edit farmer form shown as a dialog.
-class _ClientDialog extends ConsumerStatefulWidget {
-  const _ClientDialog({this.existing});
+/// Add / edit farmer form, shown as its own page. Pops `true` once saved.
+class AgentClientFormScreen extends ConsumerStatefulWidget {
+  const AgentClientFormScreen({super.key, this.existing});
   final AgentClient? existing;
 
   @override
-  ConsumerState<_ClientDialog> createState() => _ClientDialogState();
+  ConsumerState<AgentClientFormScreen> createState() => _AgentClientFormScreenState();
 }
 
-class _ClientDialogState extends ConsumerState<_ClientDialog> {
+class _AgentClientFormScreenState extends ConsumerState<AgentClientFormScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _name = TextEditingController(text: widget.existing?.name ?? '');
   late final TextEditingController _phone =
@@ -319,6 +312,8 @@ class _ClientDialogState extends ConsumerState<_ClientDialog> {
   void initState() {
     super.initState();
     _place = placeFrom(ref.read(locationsProvider), widget.existing?.district, null);
+    // Forget an error left by an earlier visit.
+    Future.microtask(() => ref.read(_clientErrorProvider.notifier).state = null);
   }
 
   @override
@@ -339,7 +334,7 @@ class _ClientDialogState extends ConsumerState<_ClientDialog> {
         );
     if (!mounted) return;
     if (result.ok) {
-      Navigator.of(context).pop(true);
+      context.pop(true);
     } else {
       ref.read(_clientErrorProvider.notifier).state = result.error;
     }
@@ -349,56 +344,45 @@ class _ClientDialogState extends ConsumerState<_ClientDialog> {
   Widget build(BuildContext context) {
     final busy = ref.watch(agentControllerProvider).busy;
     final error = ref.watch(_clientErrorProvider);
-    return AlertDialog(
-      title: Text(widget.existing == null ? 'Register farmer' : 'Edit farmer'),
-      content: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              LabeledField('Full name',
-                  hint: 'e.g. Bizimana Jean',
-                  icon: Icons.person_outline,
-                  controller: _name,
-                  validator: Validators.fullName,
-                  textInputAction: TextInputAction.next),
+    final editing = widget.existing != null;
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: TopBar(editing ? 'Edit Farmer' : 'Register Farmer'),
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          children: [
+            LabeledField('Full name',
+                hint: 'e.g. Bizimana Jean',
+                icon: Icons.person_outline,
+                controller: _name,
+                validator: Validators.fullName,
+                textInputAction: TextInputAction.next),
+            const SizedBox(height: 16),
+            LabeledField('Phone number',
+                hint: '07X XXX XXXX',
+                icon: Icons.smartphone_outlined,
+                controller: _phone,
+                keyboard: TextInputType.phone,
+                validator: Validators.phone,
+                textInputAction: TextInputAction.next),
+            const SizedBox(height: 16),
+            LocationFields(
+              value: _place,
+              showSector: false,
+              onChanged: (v) => setState(() => _place = v),
+            ),
+            if (error != null) ...[
               const SizedBox(height: 14),
-              LabeledField('Phone number',
-                  hint: '07X XXX XXXX',
-                  icon: Icons.smartphone_outlined,
-                  controller: _phone,
-                  keyboard: TextInputType.phone,
-                  validator: Validators.phone,
-                  textInputAction: TextInputAction.next),
-              const SizedBox(height: 14),
-              LocationFields(
-                value: _place,
-                showSector: false,
-                onChanged: (v) => setState(() => _place = v),
-              ),
-              if (error != null) ...[
-                const SizedBox(height: 12),
-                Text(error, style: const TextStyle(color: AppColors.danger, fontSize: 14)),
-              ],
+              Text(error, style: const TextStyle(color: AppColors.danger, fontSize: 14)),
             ],
-          ),
+            const SizedBox(height: 24),
+            PrimaryButton(busy ? 'Saving…' : (editing ? 'Save Changes' : 'Register Farmer'),
+                height: 54, onPressed: busy ? null : _save),
+          ],
         ),
       ),
-      actions: [
-        TextButton(
-          style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
-          onPressed: busy ? null : () => Navigator.of(context).pop(false),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          style: FilledButton.styleFrom(
-              minimumSize: const Size(48, 48), backgroundColor: AppColors.primary),
-          onPressed: busy ? null : _save,
-          child: Text(busy ? 'Saving…' : 'Save'),
-        ),
-      ],
     );
   }
 }
@@ -509,8 +493,9 @@ class _AgentNewBookingScreenState extends ConsumerState<AgentNewBookingScreen> {
     // Pre-fill the location with the farmer's district whenever the farmer changes.
     ref.listen<String?>(_selectedClientIdProvider, (_, next) {
       final c = _findClient(ref.read(agentClientsProvider).valueOrNull ?? const [], next);
-      if (c != null)
+      if (c != null) {
         setState(() => _place = placeFrom(ref.read(locationsProvider), c.district, null));
+      }
     });
 
     if (clients.isEmpty) {

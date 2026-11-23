@@ -6,9 +6,13 @@ import 'package:http/http.dart' as http;
 import '../../core/errors/app_exception.dart';
 import '../../domain/repositories/image_storage.dart';
 
-/// Base URL of the upload Worker (see `worker/`). Set with
-/// `--dart-define=UPLOAD_URL=https://ntiza-uploads.<account>.workers.dev`.
-const uploadBaseUrl = String.fromEnvironment('UPLOAD_URL');
+/// Base URL of the upload Worker (see `worker/`). Defaults to the deployed
+/// production Worker; override for local development with
+/// `--dart-define=UPLOAD_URL=http://<host>:8787`.
+const uploadBaseUrl = String.fromEnvironment(
+  'UPLOAD_URL',
+  defaultValue: 'https://ntiza-app.campus-incident-reporting.workers.dev',
+);
 
 /// Stores images in Cloudflare R2 through the upload Worker, which checks the
 /// caller's Firebase ID token. No R2 credentials live in the app.

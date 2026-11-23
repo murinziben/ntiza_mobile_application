@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -92,10 +92,12 @@ class EquipmentTile extends StatelessWidget {
                       ),
                       if (!compact) ...[
                         const SizedBox(width: 8),
-                        PrimaryButton('Book',
+                        // Greyed out while the machine is in maintenance or fully booked.
+                        PrimaryButton(item.bookable ? 'Book' : 'Unavailable',
                             expand: false,
                             compact: true,
-                            onPressed: () => context.push('/equipment/${item.id}')),
+                            onPressed:
+                                item.bookable ? () => context.push('/equipment/${item.id}') : null),
                       ],
                     ],
                   ),

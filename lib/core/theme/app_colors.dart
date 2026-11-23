@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Colour tokens sampled from the NTIZA mobile design.
 class AppColors {

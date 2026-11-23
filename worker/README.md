@@ -10,11 +10,9 @@ npx wrangler r2 bucket create ntiza-app
 npx wrangler deploy
 ```
 
-Run the app against it:
-
-```bash
-flutter run --dart-define=UPLOAD_URL=https://ntiza-app.<account>.workers.dev
-```
+The deployed Worker is `https://ntiza-app.campus-incident-reporting.workers.dev`. The app uses it by
+default (`lib/data/repositories/r2_image_storage.dart`), so a plain `flutter run` or a release build
+uploads to production R2 with no extra flags. Override it only for local development (below).
 
 Local development (Auth emulator tokens are unsigned, so enable
 `ALLOW_EMULATOR_TOKENS=true` in `wrangler.toml` for `wrangler dev` only):

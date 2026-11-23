@@ -135,6 +135,12 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // Agent booking form, opened from the dashboard or a farmer's card.
       GoRoute(path: '/agent/new', builder: (_, __) => const AgentNewBookingScreen()),
+      // Add / edit one of the agent's farmers (edit receives the client as `extra`).
+      GoRoute(path: '/agent/farmers/new', builder: (_, __) => const AgentClientFormScreen()),
+      GoRoute(
+        path: '/agent/farmers/edit',
+        builder: (_, s) => AgentClientFormScreen(existing: s.extra as AgentClient?),
+      ),
 
       // Owner create / edit form.
       GoRoute(path: '/owner/equipment/new', builder: (_, __) => const EquipmentFormScreen()),

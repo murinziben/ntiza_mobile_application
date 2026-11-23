@@ -12,9 +12,9 @@ coverage/
 tools/serviceAccountKey.json
 tools/node_modules/
 
-# Firebase emulator logs
-*-debug.log
-
-# Local run settings (see env.example.json)
-env.json
+# Cloudflare Worker / local emulator files
 .wrangler/
+worker/.wrangler/
+worker/.dev.vars
+env.json
+*-debug.log

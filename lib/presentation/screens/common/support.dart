@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Where users go when something is wrong with a booking or their account.
 const supportEmail = 'support@ntiza.app';

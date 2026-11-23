@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../domain/constants.dart';
 import '../../../domain/validators.dart';
 import '../../providers/providers.dart';
 import '../../widgets/ui.dart';
@@ -65,6 +66,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
             children: [
+              // Signed-out visitors can go back to the public home without an account.
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () => context.go('/home'),
+                  style: TextButton.styleFrom(
+                      minimumSize: const Size(48, 48),
+                      padding: const EdgeInsets.only(right: 12),
+                      foregroundColor: AppColors.primaryDark),
+                  icon: const Icon(Icons.arrow_back, size: 20),
+                  label: const Text('Home', style: TextStyle(fontWeight: FontWeight.w700)),
+                ),
+              ),
+              const SizedBox(height: 8),
               const Align(alignment: Alignment.centerLeft, child: LogoLockup()),
               const SizedBox(height: 26),
               const Text('Welcome back',
@@ -93,6 +108,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   onSubmitted: (_) => busy ? null : _login()),
               const SizedBox(height: 6),
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Flexible(
                     child: InkWell(
@@ -122,7 +138,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                     ),
                   ),
-                  const Spacer(),
                   TextButton(
                     onPressed: () => context.push('/forgot-password'),
                     style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
@@ -134,8 +149,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               const SizedBox(height: 14),
               PrimaryButton(busy ? 'Please wait…' : 'Log In',
                   height: 54, onPressed: busy ? null : _login),
-              const SizedBox(height: 14),
-              OutlineButtonX('Continue with Google', height: 54, onPressed: busy ? null : _google),
+              if (showGoogleSignIn) ...[
+                const SizedBox(height: 14),
+                OutlineButtonX('Continue with Google',
+                    height: 54, onPressed: busy ? null : _google),
+              ],
               const SizedBox(height: 18),
               const Row(children: [
                 Expanded(child: Divider()),

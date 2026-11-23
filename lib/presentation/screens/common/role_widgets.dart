@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -164,7 +164,7 @@ class BarCard extends StatelessWidget {
           Text(total, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
           const SizedBox(height: 16),
           SizedBox(
-            height: height + 22,
+            height: height + 30,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -309,9 +309,19 @@ class RequestCard extends StatelessWidget {
 }
 
 /// Person row: avatar, name, coloured sub line, meta, trailing soft button.
+/// One entry of a [PersonCard]'s ellipsis menu.
+class PersonMenuItem {
+  const PersonMenuItem(this.label, this.icon, this.onTap, {this.danger = false});
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool danger;
+}
+
 class PersonCard extends StatelessWidget {
   const PersonCard(
       {super.key,
+      this.menu = const [],
       required this.initials,
       required this.name,
       this.accent,
@@ -324,6 +334,7 @@ class PersonCard extends StatelessWidget {
   final String? accent, meta, action;
   final bool star;
   final List<Widget> tags;
+  final List<PersonMenuItem> menu;
   final VoidCallback? onAction;
 
   @override
@@ -368,6 +379,29 @@ class PersonCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   SoftButton(action!, onPressed: onAction),
                 ],
+                if (menu.isNotEmpty)
+                  PopupMenuButton<PersonMenuItem>(
+                    tooltip: 'More options',
+                    icon: const Icon(Icons.more_vert, color: AppColors.muted),
+                    style: IconButton.styleFrom(minimumSize: const Size(48, 48)),
+                    onSelected: (item) => item.onTap(),
+                    itemBuilder: (_) => [
+                      for (final item in menu)
+                        PopupMenuItem(
+                          value: item,
+                          child: Row(
+                            children: [
+                              Icon(item.icon,
+                                  size: 20, color: item.danger ? AppColors.danger : AppColors.body),
+                              const SizedBox(width: 12),
+                              Text(item.label,
+                                  style: TextStyle(
+                                      color: item.danger ? AppColors.danger : AppColors.ink)),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
               ],
             ),
             if (tags.isNotEmpty) ...[

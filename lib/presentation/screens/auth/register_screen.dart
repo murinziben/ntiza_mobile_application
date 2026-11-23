@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../domain/entities/entities.dart';
+import '../../../domain/constants.dart';
 import '../../../domain/validators.dart';
 import '../../providers/locations_provider.dart';
 import '../../providers/providers.dart';
@@ -160,8 +161,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             const SizedBox(height: 22),
             PrimaryButton(busy ? 'Please wait…' : 'Continue',
                 height: 54, onPressed: busy ? null : _submit),
-            const SizedBox(height: 12),
-            OutlineButtonX('Continue with Google', height: 54, onPressed: busy ? null : _google),
+            if (showGoogleSignIn) ...[
+              const SizedBox(height: 12),
+              OutlineButtonX('Continue with Google', height: 54, onPressed: busy ? null : _google),
+            ],
           ],
         ),
       ),

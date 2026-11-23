@@ -106,6 +106,15 @@ flutter analyze
 flutter test --coverage      # coverage report: coverage/lcov.info
 ```
 
+## Testing
+`flutter test --coverage` runs about 220 tests (≈ 59 % line coverage):
+* **Unit:** validators, pricing, use cases, mappers, formatters, router redirects, settings repository.
+* **Controller:** Riverpod controllers against in-memory fakes (`test/helpers/fakes.dart`).
+* **Widget:** login, shared widgets, the location fields, and every screen rendered with data at three
+  sizes — small phone (360×640), large phone (430×932) and landscape (800×360) — failing on any
+  overflow or build error (`test/presentation/screens_test.dart`).
+* Tests load Roboto from `test/fonts` (see `test/flutter_test_config.dart`) so text widths are realistic.
+
 ## Security rules in one minute
 * Everything is denied unless a rule allows it.
 * A user reads and edits only **their own** profile (`name`, `phone`, `district`); roles and approval
