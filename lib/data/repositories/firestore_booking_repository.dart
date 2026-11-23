@@ -58,9 +58,9 @@ class FirestoreBookingRepository implements BookingRepository {
               throw const AppException(
                   'This machine is already booked on that date. Pick another day.');
             }
-            tx.update(machine, {
+            tx.set(machine, {
               'bookedDates': FieldValue.arrayUnion([booking.dateKey])
-            });
+            }, SetOptions(merge: true));
           }
           final current = snap.data()?['booking'];
           final n = (current is num ? current.toInt() : 2040) + 1;
@@ -73,7 +73,7 @@ class FirestoreBookingRepository implements BookingRepository {
 
   @override
   Future<void> markPaid(String ref, String via) =>
-      guardData(() => _bookings.doc(ref).update({'paidVia': via}));
+      guardData(() => _bookings.doc(ref).set({'paidVia': via}, SetOptions(merge: true)));
 
   @override
   Future<void> setStatus(Booking booking, String status) => guardData(() async {

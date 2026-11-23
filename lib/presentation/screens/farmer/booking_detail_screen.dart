@@ -96,8 +96,28 @@ class BookingDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final b = ref.watch(bookingByRefProvider(bookingRef));
     if (b == null) {
-      return const Scaffold(
-          appBar: TopBar('Booking'), body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        appBar: TopBar('Booking #$bookingRef'),
+        body: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.event_busy_outlined, size: 54, color: AppColors.muted),
+                const SizedBox(height: 16),
+                const Text('Booking not found',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 6),
+                Text('Reference #$bookingRef could not be found.',
+                    style: const TextStyle(color: AppColors.muted)),
+                const SizedBox(height: 20),
+                PrimaryButton('Back to Bookings', expand: false, onPressed: () => context.pop()),
+              ],
+            ),
+          ),
+        ),
+      );
     }
     final busy = ref.watch(bookingControllerProvider).busy;
     final cancelled = b.status == BookingStatus.cancelled;

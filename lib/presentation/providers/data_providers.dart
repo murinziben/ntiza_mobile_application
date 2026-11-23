@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/sample_data.dart';
 import '../../domain/entities/agent_client.dart';
 import '../../domain/entities/app_notification.dart';
 import '../../domain/entities/app_user.dart';
@@ -49,6 +50,9 @@ final equipmentByIdProvider = Provider.family<Equipment?, String>((ref, id) {
   for (final e in all) {
     if (e.id == id) return e;
   }
+  for (final e in sampleEquipment) {
+    if (e.id == id) return e;
+  }
   return null;
 });
 
@@ -82,7 +86,12 @@ final allBookingsProvider = StreamProvider<List<Booking>>(
 
 /// Finds a booking by reference in whichever list the user can read.
 final bookingByRefProvider = Provider.family<Booking?, String>((ref, bookingRef) {
-  for (final source in [bookingsProvider, providerBookingsProvider, agentBookingsProvider]) {
+  for (final source in [
+    bookingsProvider,
+    providerBookingsProvider,
+    agentBookingsProvider,
+    allBookingsProvider,
+  ]) {
     for (final b in ref.watch(source).valueOrNull ?? const <Booking>[]) {
       if (b.ref == bookingRef) return b;
     }

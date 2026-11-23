@@ -39,7 +39,11 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
 
   Future<void> _pay() async {
     final booking = ref.read(bookingByRefProvider(widget.bookingRef));
-    if (booking == null || !_formKey.currentState!.validate()) return;
+    if (booking == null) {
+      showToast(context, 'Booking not found.');
+      return;
+    }
+    if (!_formKey.currentState!.validate()) return;
     final via = ref.read(_methodProvider);
     ref.read(_waitingProvider.notifier).state = true;
     // Simulated approval prompt; a real provider callback replaces this later.
@@ -52,6 +56,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
       showToast(context, result.error!);
       return;
     }
+    showToast(context, 'Payment simulation successful!');
     context.go('/farmer/booking/${widget.bookingRef}');
   }
 

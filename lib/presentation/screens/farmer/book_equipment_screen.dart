@@ -54,7 +54,14 @@ class _BookEquipmentScreenState extends ConsumerState<BookEquipmentScreen> {
 
   Future<void> _submit() async {
     final e = ref.read(equipmentByIdProvider(widget.equipmentId));
-    if (e == null || !_formKey.currentState!.validate()) return;
+    if (e == null) {
+      showToast(context, 'Machine details could not be found.');
+      return;
+    }
+    if (!_formKey.currentState!.validate()) {
+      showToast(context, 'Please select your farm location to continue.');
+      return;
+    }
     final durations = BookingPricing.durationOptions(e.unit);
     final duration =
         ref.read(_durationProvider) ?? durations[BookingPricing.defaultDurationIndex(e.unit)];
@@ -206,7 +213,7 @@ class _BookEquipmentScreenState extends ConsumerState<BookEquipmentScreen> {
         ),
         DropdownButtonFormField<String>(
           key: ValueKey('$label$value'),
-          initialValue: value,
+          value: value,
           isExpanded: true,
           decoration: InputDecoration(prefixIcon: Icon(icon, color: AppColors.muted)),
           items: [for (final o in options) DropdownMenuItem(value: o, child: Text(o))],
