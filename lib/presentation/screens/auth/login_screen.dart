@@ -152,7 +152,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               if (showGoogleSignIn) ...[
                 const SizedBox(height: 14),
                 OutlineButtonX('Continue with Google',
-                    height: 54, onPressed: busy ? null : _google),
+                    height: 54, leading: const GoogleLogo(), onPressed: busy ? null : _google),
               ],
               const SizedBox(height: 18),
               const Row(children: [
